@@ -304,6 +304,48 @@
   color: #991b1b;
 }
 
+.status-select {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+  background: white;
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.status-select.pending {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fbbf24;
+}
+
+.status-select.approved {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #10b981;
+}
+
+.status-select.paid {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #10b981;
+}
+
+.status-select.rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #ef4444;
+}
+
 .action-icons {
   display: flex;
   gap: 12px;

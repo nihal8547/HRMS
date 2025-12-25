@@ -257,6 +257,17 @@ const Overtime = () => {
     }
   };
 
+  // Format date to dd/MM/yyyy
+  const formatDate = (date: Date | null | undefined): string => {
+    if (!date) return 'N/A';
+    const d = date instanceof Date ? date : date.toDate ? date.toDate() : new Date(date);
+    if (isNaN(d.getTime())) return 'N/A';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   const calculateHours = (fromTime: string, toTime: string): number => {
     if (!fromTime || !toTime) return 0;
     
@@ -557,6 +568,25 @@ const Overtime = () => {
     }
   };
 
+  const handleStatusUpdate = async (id: string, newStatus: string) => {
+    if (!isAdminUser) {
+      alert('Only administrators can update overtime status.');
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, 'overtime', id), {
+        status: newStatus,
+        updatedAt: new Date()
+      });
+      setMessage('Overtime status updated successfully!');
+      await fetchSubmittedOvertimes();
+    } catch (error) {
+      console.error('Error updating overtime status:', error);
+      setMessage('Error updating overtime status. Please try again.');
+    }
+  };
+
   const addModalEntry = () => {
     setModalEntries([...modalEntries, { date: '', fromTime: '', toTime: '', hours: 0, reason: '' }]);
   };
@@ -670,11 +700,8 @@ const Overtime = () => {
       doc.text(`Employee Name: ${record.name || 'N/A'}`, 20, yPos);
 
       // Report Date
-      const reportDate = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
+      const now = new Date();
+      const reportDate = formatDate(now);
       doc.text(`Report Generated: ${reportDate}`, pageWidth - 20, yPos - 17, { align: 'right' });
 
       yPos += 20;
@@ -689,13 +716,20 @@ const Overtime = () => {
       doc.setTextColor(60, 60, 60);
       
       const details = [
-        ['Date:', record.date || 'N/A'],
+        ['Date:', record.date 
+          ? (() => {
+              const dateParts = record.date.split('-');
+              if (dateParts.length === 3) {
+                return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+              }
+              return record.date;
+            })()
+          : 'N/A'],
         ['From Time:', record.fromTime || 'N/A'],
         ['To Time:', record.toTime || 'N/A'],
         ['Total Hours:', (record.hours || 0).toFixed(2)],
         ['Status:', (record.status || 'pending').toUpperCase()],
-        ['Submitted At:', record.submittedAt?.toDate?.()?.toLocaleString() || 
-                          record.createdAt?.toDate?.()?.toLocaleString() || 'N/A']
+        ['Submitted At:', formatDate(record.submittedAt || record.createdAt)]
       ];
 
       details.forEach(([label, value]) => {
@@ -727,7 +761,8 @@ const Overtime = () => {
       doc.setTextColor(120, 120, 120);
       doc.setFont('helvetica', 'italic');
       doc.text('This is a computer-generated document. No signature required.', pageWidth / 2, footerY, { align: 'center' });
-      doc.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, footerY + 5, { align: 'center' });
+      const now = new Date();
+      doc.text(`Generated on ${formatDate(now)}`, pageWidth / 2, footerY + 5, { align: 'center' });
 
       // Save PDF
       const fileName = `Overtime_${record.employeeId || 'Record'}_${record.date || new Date().toISOString().split('T')[0]}.pdf`;
@@ -811,11 +846,8 @@ const Overtime = () => {
       }
 
       // Report Date
-      const reportDate = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
+      const now = new Date();
+      const reportDate = formatDate(now);
       doc.text(`Report Generated: ${reportDate}`, pageWidth - 20, yPos, { align: 'right' });
 
       yPos += 20;
@@ -833,7 +865,15 @@ const Overtime = () => {
 
       // Prepare table data
       const tableData = records.map(record => [
-        record.date || 'N/A',
+        record.date 
+          ? (() => {
+              const dateParts = record.date.split('-');
+              if (dateParts.length === 3) {
+                return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+              }
+              return record.date;
+            })()
+          : 'N/A',
         record.fromTime || 'N/A',
         record.toTime || 'N/A',
         (record.hours || 0).toFixed(2),
@@ -894,7 +934,8 @@ const Overtime = () => {
       doc.setTextColor(120, 120, 120);
       doc.setFont('helvetica', 'italic');
       doc.text('This is a computer-generated document. No signature required.', pageWidth / 2, footerY, { align: 'center' });
-      doc.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, footerY + 5, { align: 'center' });
+      const now = new Date();
+      doc.text(`Generated on ${formatDate(now)}`, pageWidth / 2, footerY + 5, { align: 'center' });
 
       // Save PDF
       const fileName = `Overtime_Report_${employeeData?.employeeId || 'Current'}_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -999,11 +1040,8 @@ const Overtime = () => {
       }
 
       // Report Date
-      const reportDate = new Date().toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      });
+      const now = new Date();
+      const reportDate = formatDate(now);
       doc.text(`Report Generated: ${reportDate}`, pageWidth - 20, yPos, { align: 'right' });
 
       yPos += 20;
@@ -1021,7 +1059,15 @@ const Overtime = () => {
 
       // Prepare table data
       const tableData = records.map(record => [
-        record.date || 'N/A',
+        record.date 
+          ? (() => {
+              const dateParts = record.date.split('-');
+              if (dateParts.length === 3) {
+                return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+              }
+              return record.date;
+            })()
+          : 'N/A',
         record.fromTime || 'N/A',
         record.toTime || 'N/A',
         (record.hours || 0).toFixed(2),
@@ -1082,7 +1128,8 @@ const Overtime = () => {
       doc.setTextColor(120, 120, 120);
       doc.setFont('helvetica', 'italic');
       doc.text('This is a computer-generated document. No signature required.', pageWidth / 2, footerY, { align: 'center' });
-      doc.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, footerY + 5, { align: 'center' });
+      const now = new Date();
+      doc.text(`Generated on ${formatDate(now)}`, pageWidth / 2, footerY + 5, { align: 'center' });
 
       // Save PDF
       const fileName = `Overtime_Report_${employeeData?.employeeId || 'All'}_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -1115,27 +1162,15 @@ const Overtime = () => {
             </button>
           )}
           {canView && (
-            <>
-              <button 
-                type="button"
-                className="btn-view-submitted" 
-                onClick={handleViewPastOvertime}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <Icon name="view" />
-                Past Overtime
-              </button>
-              <button 
-                type="button"
-                className="btn-export" 
-                onClick={handleExport}
-                disabled={loading}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <Icon name="download" />
-                {loading ? 'Generating PDF...' : 'Download PDF Report'}
-              </button>
-            </>
+            <button 
+              type="button"
+              className="btn-view-submitted" 
+              onClick={handleViewPastOvertime}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Icon name="view" />
+              Past Overtime
+            </button>
           )}
         </div>
       </div>
@@ -1283,18 +1318,6 @@ const Overtime = () => {
           <h3 style={{ margin: 0, color: '#1f2937', fontSize: '1.25rem', fontWeight: '600' }}>
             Submitted Overtime Records
           </h3>
-          {submittedOvertimes.length > 0 && canView && (
-            <button
-              type="button"
-              className="btn-export"
-              onClick={handleExportCurrentTable}
-              disabled={loading}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              <Icon name="download" />
-              {loading ? 'Generating PDF...' : 'Download PDF'}
-            </button>
-          )}
         </div>
         {loadingSubmitted ? (
           <div className="loading-container">
@@ -1310,6 +1333,7 @@ const Overtime = () => {
             <table className="staff-table">
               <thead>
                 <tr>
+                  <th>User Name</th>
                   <th>Date</th>
                   <th>From Time</th>
                   <th>To Time</th>
@@ -1321,62 +1345,134 @@ const Overtime = () => {
                 </tr>
               </thead>
               <tbody>
-                {submittedOvertimes.map((record) => (
-                  <tr key={record.id}>
-                    <td>{record.date || 'N/A'}</td>
-                    <td>{record.fromTime || 'N/A'}</td>
-                    <td>{record.toTime || 'N/A'}</td>
-                    <td>{record.hours?.toFixed(2) || '0.00'}</td>
-                    <td title={record.reason || ''}>
-                      {(record.reason || '').length > 50 
-                        ? (record.reason || '').substring(0, 50) + '...' 
-                        : record.reason || 'N/A'}
-                    </td>
-                    <td>
-                      <span className={`status-badge ${record.status || 'pending'}`}>
-                        {record.status || 'pending'}
-                      </span>
-                    </td>
-                    <td>
-                      {record.submittedAt?.toDate?.()?.toLocaleString() || 
-                       record.createdAt?.toDate?.()?.toLocaleString() || 
-                       'N/A'}
-                    </td>
-                    <td>
-                      <div className="action-icons">
-                        <button
-                          type="button"
-                          className="action-icon download"
-                          title="Download PDF"
-                          onClick={() => handleExportSingleRecord(record)}
-                          disabled={loading}
-                        >
-                          <Icon name="download" />
-                        </button>
-                        {canEditDelete && (
-                          <>
-                            <button
-                              type="button"
-                              className="action-icon edit"
-                              title="Edit"
-                              onClick={() => handleEdit(record)}
-                            >
-                              <Icon name="edit" />
-                            </button>
-                            <button
-                              type="button"
-                              className="action-icon delete"
-                              title="Delete"
-                              onClick={() => handleDelete(record.id)}
-                            >
-                              <Icon name="delete" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {(() => {
+                  // Group records by user (employeeId or name)
+                  const groupedByUser = submittedOvertimes.reduce((acc, record) => {
+                    const key = record.employeeId || record.name || 'unknown';
+                    if (!acc[key]) {
+                      acc[key] = {
+                        employeeId: record.employeeId || '',
+                        employeeName: record.name || 'Unknown',
+                        records: []
+                      };
+                    }
+                    acc[key].records.push(record);
+                    return acc;
+                  }, {} as Record<string, { employeeId: string; employeeName: string; records: SubmittedOvertime[] }>);
+
+                  const employeeGroups = Object.values(groupedByUser);
+                  const rows: JSX.Element[] = [];
+
+                  employeeGroups.forEach((group, groupIndex) => {
+                    const totalHours = group.records.reduce((sum, r) => sum + (r.hours || 0), 0);
+
+                    group.records.forEach((record, recordIndex) => {
+                      rows.push(
+                        <tr key={record.id}>
+                          {recordIndex === 0 && (
+                            <td rowSpan={group.records.length} style={{ verticalAlign: 'top', fontWeight: '600', background: '#f9fafb', borderRight: '2px solid #e5e7eb', padding: '12px' }}>
+                              <div style={{ marginBottom: '4px' }}>{group.employeeName}</div>
+                              {group.employeeId && (
+                                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                  ({group.employeeId})
+                                </div>
+                              )}
+                            </td>
+                          )}
+                          <td>
+                            {record.date 
+                              ? (() => {
+                                  const dateParts = record.date.split('-');
+                                  if (dateParts.length === 3) {
+                                    return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                                  }
+                                  return record.date;
+                                })()
+                              : 'N/A'}
+                          </td>
+                          <td>{record.fromTime || 'N/A'}</td>
+                          <td>{record.toTime || 'N/A'}</td>
+                          <td>{record.hours?.toFixed(2) || '0.00'}</td>
+                          <td title={record.reason || ''}>
+                            {(record.reason || '').length > 50 
+                              ? (record.reason || '').substring(0, 50) + '...' 
+                              : record.reason || 'N/A'}
+                          </td>
+                          <td>
+                            {isAdminUser ? (
+                              <select
+                                value={record.status || 'pending'}
+                                onChange={(e) => handleStatusUpdate(record.id!, e.target.value)}
+                                className={`status-select ${record.status || 'pending'}`}
+                                style={{ minWidth: '120px' }}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="paid">Paid</option>
+                              </select>
+                            ) : (
+                              <span className={`status-badge ${record.status || 'pending'}`}>
+                                {record.status || 'pending'}
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            {formatDate(record.submittedAt || record.createdAt)}
+                          </td>
+                          <td>
+                            <div className="action-icons">
+                              <button
+                                type="button"
+                                className="action-icon download"
+                                title="Download PDF"
+                                onClick={() => handleExportSingleRecord(record)}
+                                disabled={loading}
+                              >
+                                <Icon name="download" />
+                              </button>
+                              {canEditDelete && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="action-icon edit"
+                                    title="Edit"
+                                    onClick={() => handleEdit(record)}
+                                  >
+                                    <Icon name="edit" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="action-icon delete"
+                                    title="Delete"
+                                    onClick={() => handleDelete(record.id)}
+                                  >
+                                    <Icon name="delete" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    });
+
+                    // Add total row for this user
+                    rows.push(
+                      <tr key={`total-${group.employeeId || groupIndex}`} style={{ background: '#eff6ff', fontWeight: '600' }}>
+                        <td colSpan={4} style={{ textAlign: 'right', padding: '12px 16px', borderTop: '2px solid #bfdbfe' }}>
+                          Total Hours for {group.employeeName}:
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#1e40af', borderTop: '2px solid #bfdbfe', fontSize: '1rem' }}>
+                          {totalHours.toFixed(2)}
+                        </td>
+                        <td colSpan={4} style={{ borderTop: '2px solid #bfdbfe' }}></td>
+                      </tr>
+                    );
+                  });
+
+                  return rows;
+                })()}
               </tbody>
             </table>
           </div>
@@ -1432,7 +1528,17 @@ const Overtime = () => {
                     <tbody>
                       {pastOvertimes.map((record) => (
                         <tr key={record.id}>
-                          <td>{record.date || 'N/A'}</td>
+                          <td>
+                            {record.date 
+                              ? (() => {
+                                  const dateParts = record.date.split('-');
+                                  if (dateParts.length === 3) {
+                                    return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                                  }
+                                  return record.date;
+                                })()
+                              : 'N/A'}
+                          </td>
                           <td>{record.fromTime || 'N/A'}</td>
                           <td>{record.toTime || 'N/A'}</td>
                           <td>{record.hours?.toFixed(2) || '0.00'}</td>
@@ -1442,15 +1548,27 @@ const Overtime = () => {
                               : record.reason || 'N/A'}
                           </td>
                           <td>
-                            <span className={`status-badge ${record.status || 'pending'}`}>
-                              {record.status || 'pending'}
-                            </span>
+                            {isAdminUser ? (
+                              <select
+                                value={record.status || 'pending'}
+                                onChange={(e) => handleStatusUpdate(record.id!, e.target.value)}
+                                className={`status-select ${record.status || 'pending'}`}
+                                style={{ minWidth: '120px' }}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="paid">Paid</option>
+                              </select>
+                            ) : (
+                              <span className={`status-badge ${record.status || 'pending'}`}>
+                                {record.status || 'pending'}
+                              </span>
+                            )}
                           </td>
                           <td>{record.resetMonth || 'N/A'}</td>
                           <td>
-                            {record.submittedAt?.toDate?.()?.toLocaleString() || 
-                             record.createdAt?.toDate?.()?.toLocaleString() || 
-                             'N/A'}
+                            {formatDate(record.submittedAt || record.createdAt)}
                           </td>
                         </tr>
                       ))}

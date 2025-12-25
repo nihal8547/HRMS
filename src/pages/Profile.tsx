@@ -4,7 +4,6 @@ import { doc, getDoc, collection, getDocs, updateDoc, query, where } from 'fireb
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db, storage } from '../firebase/config';
-import ImageCropper from '../components/ImageCropper';
 import Icon from '../components/Icons';
 import './Profile.css';
 
@@ -273,18 +272,6 @@ const Profile = () => {
     return downloadURL;
   };
 
-  const handleCroppedImage = (croppedBlob: Blob) => {
-    const file = new File([croppedBlob], 'profile.jpg', { type: 'image/jpeg' });
-    setProfileImage(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setProfileImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(croppedBlob);
-    setShowImageCropper(false);
-    setImageToCrop('');
-  };
-
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'qid' | 'passport' | 'medicalLicense') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -306,8 +293,8 @@ const Profile = () => {
     reader.onloadend = () => {
       const result = reader.result as string;
       if (type === 'profile') {
-        setImageToCrop(result);
-        setShowImageCropper(true);
+        setProfileImagePreview(result);
+        setProfileImage(file);
       } else if (type === 'qid') {
         setQidImagePreview(result);
         setQidImage(file);
@@ -1123,19 +1110,6 @@ const Profile = () => {
           )}
         </div>
       </div>
-      
-      {showImageCropper && imageToCrop && (
-        <ImageCropper
-          imageSrc={imageToCrop}
-          onCrop={handleCroppedImage}
-          onCancel={() => {
-            setShowImageCropper(false);
-            setImageToCrop('');
-          }}
-          aspectRatio={1}
-          circular={true}
-        />
-      )}
     </div>
   );
 };

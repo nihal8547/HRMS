@@ -90,8 +90,8 @@ const Leave = () => {
       };
       const permission = rolePermission ? getPermissionLevel(rolePermission.pages['Leave']) : 'edit';
       
-      // STRICT ISOLATION: Only admins can see all leaves, all other users see only their own data
-      if (adminUser) {
+      // Admin, edit, or view users can see all leaves (view users see all data including admin updates)
+      if (adminUser || permission === 'edit' || permission === 'view') {
         const snapshot = await getDocs(collection(db, 'leaves'));
         const leavesData = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -101,7 +101,7 @@ const Leave = () => {
           (b.createdAt?.toDate?.()?.getTime() || 0) - (a.createdAt?.toDate?.()?.getTime() || 0)
         ));
       } else {
-        // Non-admin users can only see their own leaves
+        // No access or only own data
         const employees = await fetchAllEmployees();
         const userEmployee = employees.find(emp => 
           emp.id === uid || emp.authUserId === uid

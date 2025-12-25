@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, doc, updateDoc, query, where } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '../../firebase/config';
-import { fetchUserRole, isAdmin } from '../../utils/userRole';
-import { fetchAllEmployees } from '../../utils/fetchEmployees';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../firebase/config';
 import { usePagePermissions } from '../../hooks/usePagePermissions';
 import Icon from '../../components/Icons';
 import '../Staffs/StaffManagement.css';
@@ -26,58 +23,20 @@ const LeaveStatus = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentUserId, setCurrentUserId] = useState<string>('');
-  const [userRole, setUserRole] = useState<string>('');
-  const [isAdminUser, setIsAdminUser] = useState(false);
   const navigate = useNavigate();
   const { canEditDelete } = usePagePermissions('Leave');
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setCurrentUserId(user.uid);
-        const role = await fetchUserRole(user.uid);
-        setUserRole(role);
-        setIsAdminUser(isAdmin(role));
-        await fetchLeaves(user.uid, role);
-      }
-    });
-
-    return () => unsubscribe();
+    fetchLeaves();
   }, []);
 
-  const fetchLeaves = async (uid: string, role: string) => {
+  const fetchLeaves = async () => {
     try {
-      setLoading(true);
-      const adminUser = isAdmin(role);
-      let snapshot;
-
-      if (adminUser) {
-        // Admin can see all leaves
-        snapshot = await getDocs(collection(db, 'leaves'));
-      } else {
-        // Non-admin users can only see their own leaves
-        const allEmployees = await fetchAllEmployees();
-        const userEmployee = allEmployees.find(emp => 
-          emp.id === uid || emp.authUserId === uid
-        );
-        
-        if (userEmployee?.employeeId) {
-          snapshot = await getDocs(query(
-            collection(db, 'leaves'),
-            where('employeeId', '==', userEmployee.employeeId)
-          ));
-        } else {
-          // No employee found, return empty
-          snapshot = { docs: [] } as any;
-        }
-      }
-
+      const snapshot = await getDocs(collection(db, 'leaves'));
       const leavesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Leave[];
-      
       setLeaves(leavesData.sort((a, b) => 
         b.createdAt?.toDate?.()?.getTime() - a.createdAt?.toDate?.()?.getTime()
       ));
@@ -100,9 +59,7 @@ const LeaveStatus = () => {
         status: newStatus,
         updatedAt: new Date()
       });
-      if (currentUserId && userRole) {
-        await fetchLeaves(currentUserId, userRole);
-      }
+      fetchLeaves();
     } catch (error) {
       console.error('Error updating leave status:', error);
     }

@@ -16,7 +16,6 @@ interface Staff {
   employeeId: string;
   joinDate: string;
   status: string;
-  profileImageUrl?: string;
 }
 
 const StaffManagement = () => {
@@ -57,8 +56,7 @@ const StaffManagement = () => {
           department: emp.department || '',
           employeeId: emp.employeeId || '',
           joinDate: emp.joinDate || '',
-          status: emp.status || 'active',
-          profileImageUrl: (emp as any).profileImageUrl || ''
+          status: emp.status || 'active'
         })) as Staff[];
         setStaffs(staffsData);
       } else {
@@ -78,8 +76,7 @@ const StaffManagement = () => {
             department: userEmployee.department || '',
             employeeId: userEmployee.employeeId || '',
             joinDate: userEmployee.joinDate || '',
-            status: userEmployee.status || 'active',
-            profileImageUrl: (userEmployee as any).profileImageUrl || ''
+            status: userEmployee.status || 'active'
           }]);
         } else {
           setStaffs([]);
@@ -170,12 +167,12 @@ const StaffManagement = () => {
         <table className="staff-table">
           <thead>
             <tr>
-              <th>Image</th>
               <th>Emp ID</th>
               <th>Name</th>
               <th>Email</th>
               <th>Department</th>
               <th>Join Date</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -187,31 +184,22 @@ const StaffManagement = () => {
             ) : (
               filteredStaffs.map((staff) => (
                 <tr key={staff.id}>
-                  <td>
-                    <div className="staff-image-cell">
-                      {staff.profileImageUrl ? (
-                        <img 
-                          src={staff.profileImageUrl} 
-                          alt={staff.name}
-                          className="staff-table-image"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                            (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      {!staff.profileImageUrl && (
-                        <div className="staff-table-image-placeholder">
-                          <Icon name="user" />
-                        </div>
-                      )}
-                    </div>
-                  </td>
                   <td>{staff.employeeId}</td>
                   <td>{staff.name}</td>
                   <td>{staff.email}</td>
                   <td>{staff.department}</td>
                   <td>{staff.joinDate}</td>
+                  <td>
+                    <select
+                      value={staff.status || 'active'}
+                      onChange={(e) => handleStatusChange(staff.id, e.target.value)}
+                      className={`status-select ${staff.status}`}
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                      <option value="on-leave">On Leave</option>
+                    </select>
+                  </td>
                   <td>
                     <div className="action-dropdown-container">
                       <button
