@@ -272,8 +272,14 @@ const Overtime = () => {
       diffMinutes += 24 * 60; // Add 24 hours
     }
     
-    // Convert to hours with 2 decimal places
-    return Math.round((diffMinutes / 60) * 100) / 100;
+    // Custom conversion: 30 minutes = 0.30 hours (instead of 0.50)
+    // Formula: hours = (full hours) + (minutes * 0.01)
+    const fullHours = Math.floor(diffMinutes / 60);
+    const remainingMinutes = diffMinutes % 60;
+    const hours = fullHours + (remainingMinutes * 0.01);
+    
+    // Round to 2 decimal places
+    return Math.round(hours * 100) / 100;
   };
 
   const handleEmployeeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
