@@ -1,0 +1,112 @@
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
+
+export interface Employee {
+  id: string;
+  name?: string;
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  department?: string;
+  employeeId?: string;
+  joinDate?: string;
+  status?: string;
+  [key: string]: any;
+}
+
+/**
+ * Fetches employees/staffs from both 'staffs' and 'employees' collections
+ * and merges them, prioritizing staffs collection data
+ */
+export const fetchAllEmployees = async (): Promise<Employee[]> => {
+  try {
+    // Fetch from staffs collection
+    const staffsSnapshot = await getDocs(collection(db, 'staffs'));
+    const staffsData = staffsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Employee[];
+
+    // Also fetch from employees collection (for users who completed profile)
+    const employeesSnapshot = await getDocs(collection(db, 'employees'));
+    const employeesData = employeesSnapshot.docs
+      .filter(doc => doc.data().profileCompleted === true)
+      .map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.fullName || data.name || '',
+          fullName: data.fullName || data.name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          department: data.department || '',
+          employeeId: data.employeeId || '',
+          joinDate: data.joinDate || '',
+          status: data.status || 'active',
+          ...data // Include all other fields
+        };
+      }) as Employee[];
+
+    // Merge both collections, prioritizing staffs collection data
+    const employeesMap = new Map<string, Employee>();
+    
+    // Add employees first (from employees collection)
+    employeesData.forEach(emp => {
+      const key = emp.employeeId || emp.id;
+      if (key) {
+        employeesMap.set(key, { ...emp, id: emp.id });
+      }
+    });
+    
+    // Override with staffs data if exists (staffs collection is the source of truth)
+    staffsData.forEach(staff => {
+      const key = staff.employeeId || staff.id;
+      if (key) {
+        const existing = employeesMap.get(key);
+        if (existing) {
+          // Merge but keep staffs collection data as priority
+          employeesMap.set(key, { ...existing, ...staff, id: staff.id });
+        } else {
+          employeesMap.set(key, { ...staff, id: staff.id });
+        }
+      }
+    });
+
+    const mergedEmployees = Array.from(employeesMap.values());
+    
+    // Sort by employeeId for consistent ordering
+    mergedEmployees.sort((a, b) => {
+      if (a.employeeId && b.employeeId) {
+        return a.employeeId.localeCompare(b.employeeId);
+      }
+      return 0;
+    });
+
+    return mergedEmployees;
+  } catch (error) {
+    console.error('Error fetching employees:', error);
+    return [];
+  }
+};
+
+/**
+ * Get employee count from both collections
+ */
+export const getEmployeeCount = async (): Promise<number> => {
+  try {
+    const employees = await fetchAllEmployees();
+    return employees.length;
+  } catch (error) {
+    console.error('Error getting employee count:', error);
+    return 0;
+  }
+};
+
+
+
+
+
+
+
+
+

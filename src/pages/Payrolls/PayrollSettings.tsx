@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import Icon from '../../components/Icons';
 import '../Staffs/StaffCreate.css';
 
 const PayrollSettings = () => {
@@ -13,6 +15,7 @@ const PayrollSettings = () => {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchSettings();
@@ -71,8 +74,14 @@ const PayrollSettings = () => {
   };
 
   return (
-    <div className="staff-create">
-      <h2>Payroll Settings</h2>
+    <div className="full-page">
+      <div className="staff-create">
+        <div className="page-header-with-back">
+          <button className="back-button" onClick={() => navigate('/payrolls')}>
+          <Icon name="chevron-left" /> Back
+          </button>
+          <h2>Payroll Settings</h2>
+        </div>
       <form onSubmit={handleSubmit} className="staff-form">
         <div className="form-row">
           <div className="form-group">
@@ -161,11 +170,13 @@ const PayrollSettings = () => {
           {loading ? 'Saving...' : 'Save Settings'}
         </button>
       </form>
+      </div>
     </div>
   );
 };
 
 export default PayrollSettings;
+
 
 
 

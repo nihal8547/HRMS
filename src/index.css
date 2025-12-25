@@ -11,6 +11,28 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f5f5f5;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  position: relative;
+}
+
+html {
+  overflow-x: hidden;
+  height: 100%;
+}
+
+@media (max-width: 768px) {
+  html, body {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
 }
 
 code {
@@ -21,6 +43,20 @@ code {
 #root {
   min-height: 100vh;
 }
+
+@media (max-width: 768px) {
+  html, body, #root {
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  
+  body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 
 
 

@@ -1,9 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase/config';
+import { Link, useNavigate } from 'react-router-dom';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../../firebase/config';
+import { fetchUserRole, isAdmin, canEditPageSync } from '../../utils/userRole';
+import type { PermissionLevel } from '../../utils/userRole';
+import { usePagePermissions } from '../../hooks/usePagePermissions';
 import Icon from '../../components/Icons';
 import '../Staffs/StaffManagement.css';
+
+interface RolePermission {
+  role: string;
+  pages: {
+    [pageName: string]: PermissionLevel | boolean;
+  };
+}
 
 interface Leave {
   id: string;
@@ -22,21 +33,92 @@ const Leave = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [userRole, setUserRole] = useState<string>('');
+  const [isAdminUser, setIsAdminUser] = useState(false);
+  const [canEdit, setCanEdit] = useState(true);
+  const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
+  const navigate = useNavigate();
+  const { canEditDelete } = usePagePermissions('Leave');
 
   useEffect(() => {
-    fetchLeaves();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUserId(user.uid);
+        const role = await fetchUserRole(user.uid);
+        setUserRole(role);
+        setIsAdminUser(isAdmin(role));
+        
+        // Fetch role permissions
+        try {
+          const snapshot = await getDocs(collection(db, 'rolePermissions'));
+          const permissions = snapshot.docs.map(doc => ({
+            role: doc.id,
+            ...doc.data()
+          })) as RolePermission[];
+          setRolePermissions(permissions);
+          
+          // Check if user can edit this page
+          const canEditPage = canEditPageSync('Leave', role, permissions);
+          setCanEdit(canEditPage);
+          
+          // Fetch leaves after permissions are loaded
+          await fetchLeaves(user.uid, role, permissions);
+        } catch (error) {
+          console.error('Error fetching role permissions:', error);
+          setCanEdit(true);
+          await fetchLeaves(user.uid, role, []);
+        }
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const fetchLeaves = async () => {
+  const fetchLeaves = async (uid: string, role: string, permissions: RolePermission[] = []) => {
     try {
-      const snapshot = await getDocs(collection(db, 'leaves'));
-      const leavesData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Leave[];
-      setLeaves(leavesData.sort((a, b) => 
-        (b.createdAt?.toDate?.()?.getTime() || 0) - (a.createdAt?.toDate?.()?.getTime() || 0)
-      ));
+      const adminUser = isAdmin(role);
+      
+      // Check permission level
+      const rolePermission = permissions.find(rp => rp.role === role);
+      const getPermissionLevel = (permission: PermissionLevel | boolean | undefined): PermissionLevel => {
+        if (permission === undefined || permission === null) return 'edit';
+        if (typeof permission === 'boolean') return permission ? 'edit' : 'not_access';
+        return permission;
+      };
+      const permission = rolePermission ? getPermissionLevel(rolePermission.pages['Leave']) : 'edit';
+      
+      // Admin, edit, or view users can see all leaves (view users see all data including admin updates)
+      if (adminUser || permission === 'edit' || permission === 'view') {
+        const snapshot = await getDocs(collection(db, 'leaves'));
+        const leavesData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Leave[];
+        setLeaves(leavesData.sort((a, b) => 
+          (b.createdAt?.toDate?.()?.getTime() || 0) - (a.createdAt?.toDate?.()?.getTime() || 0)
+        ));
+      } else {
+        // No access or only own data
+        const { fetchAllEmployees } = await import('../../utils/fetchEmployees');
+        const employees = await fetchAllEmployees();
+        const userEmployee = employees.find(emp => 
+          emp.id === uid || emp.authUserId === uid
+        );
+        
+        if (userEmployee?.employeeId) {
+          const snapshot = await getDocs(query(collection(db, 'leaves'), where('employeeId', '==', userEmployee.employeeId)));
+          const leavesData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as Leave[];
+          setLeaves(leavesData.sort((a, b) => 
+            (b.createdAt?.toDate?.()?.getTime() || 0) - (a.createdAt?.toDate?.()?.getTime() || 0)
+          ));
+        } else {
+          setLeaves([]);
+        }
+      }
     } catch (error) {
       console.error('Error fetching leaves:', error);
     } finally {
@@ -45,15 +127,76 @@ const Leave = () => {
   };
 
   const handleStatusUpdate = async (id: string, newStatus: string) => {
+    // Partial access users cannot edit status - only full access users can
+    if (!canEditDelete) {
+      alert('You do not have permission to update leave status. Partial access users can only create and submit their own data.');
+      return;
+    }
+    
     try {
       await updateDoc(doc(db, 'leaves', id), { 
         status: newStatus,
         updatedAt: new Date()
       });
-      fetchLeaves();
+      await fetchLeaves(currentUserId, userRole, rolePermissions);
     } catch (error) {
       console.error('Error updating leave status:', error);
+      alert('Error updating leave status. Please try again.');
     }
+  };
+
+  const handleView = (leave: Leave) => {
+    // Navigate to leave details or show modal
+    navigate(`/leave/status`);
+  };
+
+  const handleEdit = (leave: Leave) => {
+    if (!canEdit && !isAdminUser) {
+      alert('You do not have permission to edit leave requests.');
+      return;
+    }
+    // Navigate to edit page
+    navigate(`/leave/request`);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!isAdminUser && !canEdit) {
+      alert('You do not have permission to delete leave requests.');
+      return;
+    }
+    
+    if (window.confirm('Are you sure you want to delete this leave request?')) {
+      try {
+        await deleteDoc(doc(db, 'leaves', id));
+        await fetchLeaves(currentUserId, userRole, rolePermissions);
+      } catch (error) {
+        console.error('Error deleting leave:', error);
+        alert('Error deleting leave request. Please try again.');
+      }
+    }
+  };
+
+  const handleExport = () => {
+    const csvContent = [
+      ['Employee ID', 'Name', 'Leave Type', 'Start Date', 'End Date', 'Reason', 'Status'],
+      ...filteredLeaves.map(leave => [
+        leave.employeeId,
+        leave.name,
+        leave.leaveType,
+        leave.startDate,
+        leave.endDate,
+        leave.reason,
+        leave.status
+      ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `leaves_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const filteredLeaves = leaves.filter(leave => {
@@ -104,17 +247,13 @@ const Leave = () => {
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
         </select>
-        <select className="filter-select">
-          <option>Last 30 days</option>
-          <option>Last 7 days</option>
-          <option>Last 90 days</option>
-          <option>All time</option>
-        </select>
         <div className="action-buttons">
-          <button className="btn-export">Export</button>
-          <Link to="/leave/request" className="btn-new-record">
-            New Record
-          </Link>
+          <button className="btn-export" onClick={handleExport}>Export</button>
+          {(isAdminUser || canEdit) && (
+            <Link to="/leave/request" className="btn-new-record">
+              New Record
+            </Link>
+          )}
         </div>
       </div>
       <div className="staff-table-container">
@@ -128,13 +267,13 @@ const Leave = () => {
               <th>End Date</th>
               <th>Reason</th>
               <th>Status</th>
-              <th>Actions</th>
+              {canEditDelete && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {filteredLeaves.length === 0 ? (
               <tr>
-                <td colSpan={8} className="no-data">No leave requests found</td>
+                <td colSpan={canEditDelete ? 8 : 7} className="no-data">No leave requests found</td>
               </tr>
             ) : (
               filteredLeaves.map((leave) => (
@@ -146,29 +285,55 @@ const Leave = () => {
                   <td>{leave.endDate}</td>
                   <td>{leave.reason}</td>
                   <td>
-                    <select
-                      value={leave.status}
-                      onChange={(e) => handleStatusUpdate(leave.id, e.target.value)}
-                      className={`status-select ${leave.status}`}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
+                    {canEditDelete ? (
+                      <select
+                        value={leave.status}
+                        onChange={(e) => handleStatusUpdate(leave.id, e.target.value)}
+                        className={`status-select ${leave.status}`}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    ) : (
+                      <span className={`status-badge ${leave.status}`}>
+                        {leave.status}
+                      </span>
+                    )}
                   </td>
-                  <td>
-                    <div className="action-icons">
-                      <button className="action-icon view" title="View">
-                        <Icon name="view" />
-                      </button>
-                      <button className="action-icon edit" title="Edit">
-                        <Icon name="edit" />
-                      </button>
-                      <button className="action-icon delete" title="Delete">
-                        <Icon name="delete" />
-                      </button>
-                    </div>
-                  </td>
+                  {canEditDelete && (
+                    <td>
+                      <div className="action-icons">
+                        <button 
+                          className="action-icon view" 
+                          title="View"
+                          onClick={() => handleView(leave)}
+                        >
+                          <Icon name="view" />
+                        </button>
+                        {(isAdminUser || canEdit) && (
+                          <>
+                            <button 
+                              className="action-icon edit" 
+                              title="Edit"
+                              onClick={() => handleEdit(leave)}
+                            >
+                              <Icon name="edit" />
+                            </button>
+                            {isAdminUser && (
+                              <button 
+                                className="action-icon delete" 
+                                title="Delete"
+                                onClick={() => handleDelete(leave.id)}
+                              >
+                                <Icon name="delete" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../firebase/config';
+import { fetchUserRole, isAdmin } from '../utils/userRole';
 import Icon from '../components/Icons';
 import './Staffs/StaffManagement.css';
 
@@ -21,6 +23,7 @@ const Schedules = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [formData, setFormData] = useState({
     employeeId: '',
     date: '',
@@ -29,26 +32,60 @@ const Schedules = () => {
     status: 'scheduled'
   });
   const [message, setMessage] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [userRole, setUserRole] = useState<string>('');
+  const [isAdminUser, setIsAdminUser] = useState(false);
 
   useEffect(() => {
-    fetchStaffs();
-    fetchSchedules();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUserId(user.uid);
+        const role = await fetchUserRole(user.uid);
+        setUserRole(role);
+        setIsAdminUser(isAdmin(role));
+        await fetchStaffs();
+        await fetchSchedules(user.uid, role);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const fetchStaffs = async () => {
     try {
-      const snapshot = await getDocs(collection(db, 'staffs'));
-      setStaffs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const { fetchAllEmployees } = await import('../utils/fetchEmployees');
+      const employees = await fetchAllEmployees();
+      setStaffs(employees);
     } catch (error) {
       console.error('Error fetching staffs:', error);
     }
   };
 
-  const fetchSchedules = async () => {
+  const fetchSchedules = async (uid: string, role: string) => {
     try {
-      const snapshot = await getDocs(collection(db, 'schedules'));
-      const staffsSnapshot = await getDocs(collection(db, 'staffs'));
-      const staffsMap = new Map(staffsSnapshot.docs.map(doc => [doc.data().employeeId, doc.data()]));
+      const adminUser = isAdmin(role);
+      let snapshot;
+      
+      // Import fetchAllEmployees once at the top of the function
+      const { fetchAllEmployees } = await import('../utils/fetchEmployees');
+      const allEmployees = await fetchAllEmployees();
+      
+      if (adminUser) {
+        snapshot = await getDocs(collection(db, 'schedules'));
+      } else {
+        // Get employeeId from employees/staffs collection
+        const userEmployee = allEmployees.find(emp => 
+          emp.id === uid || emp.authUserId === uid
+        );
+        
+        if (userEmployee?.employeeId) {
+          snapshot = await getDocs(query(collection(db, 'schedules'), where('employeeId', '==', userEmployee.employeeId)));
+        } else {
+          snapshot = await getDocs(query(collection(db, 'schedules'), where('employeeId', '==', '')));
+        }
+      }
+      
+      const staffsMap = new Map(allEmployees.map(emp => [emp.employeeId, emp]));
       
       const schedulesData = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -56,7 +93,7 @@ const Schedules = () => {
         return {
           id: doc.id,
           employeeId: data.employeeId,
-          name: staff?.name || 'Unknown',
+          name: staff?.name || staff?.fullName || 'Unknown',
           date: data.date,
           shiftStart: data.shiftStart,
           shiftEnd: data.shiftEnd,
@@ -82,6 +119,11 @@ const Schedules = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdminUser) {
+      alert('Only administrators can create schedules.');
+      return;
+    }
+    
     setMessage('');
 
     try {
@@ -98,7 +140,7 @@ const Schedules = () => {
         status: 'scheduled'
       });
       setShowForm(false);
-      fetchSchedules();
+      await fetchSchedules(currentUserId, userRole);
     } catch (error) {
       console.error('Error creating schedule:', error);
       setMessage('Error creating schedule. Please try again.');
@@ -106,30 +148,90 @@ const Schedules = () => {
   };
 
   const handleDelete = async (id: string) => {
+    if (!isAdminUser) {
+      alert('Only administrators can delete schedules.');
+      return;
+    }
+    
     if (window.confirm('Are you sure you want to delete this schedule?')) {
       try {
         await deleteDoc(doc(db, 'schedules', id));
-        fetchSchedules();
+        await fetchSchedules(currentUserId, userRole);
       } catch (error) {
         console.error('Error deleting schedule:', error);
+        alert('Error deleting schedule. Please try again.');
       }
     }
   };
 
-  const filteredSchedules = schedules.filter(schedule =>
-    schedule.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    schedule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    schedule.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleView = (schedule: Schedule) => {
+    alert(`Schedule Details:\nEmployee: ${schedule.name} (${schedule.employeeId})\nDate: ${schedule.date}\nShift: ${schedule.shiftStart} - ${schedule.shiftEnd}\nStatus: ${schedule.status}`);
+  };
+
+  const handleEdit = async (schedule: Schedule) => {
+    if (!isAdminUser) {
+      alert('Only administrators can edit schedules.');
+      return;
+    }
+    
+    // For now, show alert. Can be enhanced with edit modal
+    const newStatus = prompt('Enter new status (scheduled/completed/cancelled):', schedule.status);
+    if (newStatus && ['scheduled', 'completed', 'cancelled'].includes(newStatus)) {
+      try {
+        await updateDoc(doc(db, 'schedules', schedule.id), {
+          status: newStatus,
+          updatedAt: new Date()
+        });
+        await fetchSchedules(currentUserId, userRole);
+      } catch (error) {
+        console.error('Error updating schedule:', error);
+        alert('Error updating schedule. Please try again.');
+      }
+    }
+  };
+
+  const handleExport = () => {
+    const csvContent = [
+      ['Employee ID', 'Name', 'Department', 'Date', 'Shift Start', 'Shift End', 'Status'],
+      ...filteredSchedules.map(schedule => [
+        schedule.employeeId,
+        schedule.name,
+        schedule.department,
+        schedule.date,
+        schedule.shiftStart,
+        schedule.shiftEnd,
+        schedule.status
+      ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `schedules_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const filteredSchedules = schedules.filter(schedule => {
+    const matchesStatus = statusFilter === 'all' || schedule.status === statusFilter;
+    const matchesSearch = 
+      schedule.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      schedule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      schedule.department.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   if (loading) {
     return (
       <div className="staff-management">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2>Duty Time Scheduling</h2>
-          <button onClick={() => setShowForm(!showForm)} className="btn btn-primary">
-            {showForm ? 'Cancel' : '+ Create Schedule'}
-          </button>
+          {isAdminUser && (
+            <button onClick={() => setShowForm(!showForm)} className="btn btn-primary">
+              {showForm ? 'Cancel' : '+ Create Schedule'}
+            </button>
+          )}
         </div>
         <div className="loading-container">
           <div className="spinner"></div>
@@ -216,23 +318,23 @@ const Schedules = () => {
             className="search-input"
           />
         </div>
-        <select className="filter-select">
-          <option>All Status</option>
-          <option>Scheduled</option>
-          <option>Completed</option>
-          <option>Cancelled</option>
-        </select>
-        <select className="filter-select">
-          <option>Last 30 days</option>
-          <option>Last 7 days</option>
-          <option>Last 90 days</option>
-          <option>All time</option>
+        <select 
+          className="filter-select"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="all">All Status</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
         </select>
         <div className="action-buttons">
-          <button className="btn-export">Export</button>
-          <button onClick={() => setShowForm(!showForm)} className="btn-new-record">
-            {showForm ? 'Cancel' : 'New Record'}
-          </button>
+          <button className="btn-export" onClick={handleExport}>Export</button>
+          {isAdminUser && (
+            <button onClick={() => setShowForm(!showForm)} className="btn-new-record">
+              {showForm ? 'Cancel' : 'New Record'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -271,19 +373,31 @@ const Schedules = () => {
                   </td>
                   <td>
                     <div className="action-icons">
-                      <button className="action-icon view" title="View">
+                      <button 
+                        className="action-icon view" 
+                        title="View"
+                        onClick={() => handleView(schedule)}
+                      >
                         <Icon name="view" />
                       </button>
-                      <button className="action-icon edit" title="Edit">
-                        <Icon name="edit" />
-                      </button>
-                      <button 
-                        className="action-icon delete" 
-                        title="Delete"
-                        onClick={() => handleDelete(schedule.id)}
-                      >
-                        <Icon name="delete" />
-                      </button>
+                      {isAdminUser && (
+                        <>
+                          <button 
+                            className="action-icon edit" 
+                            title="Edit"
+                            onClick={() => handleEdit(schedule)}
+                          >
+                            <Icon name="edit" />
+                          </button>
+                          <button 
+                            className="action-icon delete" 
+                            title="Delete"
+                            onClick={() => handleDelete(schedule.id)}
+                          >
+                            <Icon name="delete" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

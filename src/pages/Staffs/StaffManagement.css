@@ -4,6 +4,40 @@
   font-size: 2rem;
 }
 
+.page-header-with-back {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.back-button {
+  padding: 10px 20px;
+  background: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.back-button:hover {
+  background: #4b5563;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+}
+
+.page-header-with-back h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 2rem;
+}
+
 .btn {
   padding: 12px 24px;
   border: none;
@@ -181,7 +215,8 @@
 
 .staff-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .staff-table th {
@@ -193,15 +228,28 @@
   color: #374151;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 2px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.staff-table th:last-child {
+  border-right: none;
 }
 
 .staff-table td {
   padding: 16px 20px;
   border-bottom: 1px solid #f3f4f6;
+  border-right: 1px solid #f3f4f6;
   color: #1f2937;
   font-size: 0.95rem;
   vertical-align: middle;
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+
+.staff-table td:last-child {
+  border-right: none;
 }
 
 .staff-table tbody tr {
@@ -214,6 +262,38 @@
 
 .staff-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.employee-name-link {
+  color: #3b82f6;
+  cursor: pointer;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: inline-block;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.employee-name-link:hover {
+  color: #2563eb;
+  background-color: #eff6ff;
+  text-decoration: underline;
+}
+
+.employee-name-link:active {
+  color: #1d4ed8;
+  transform: scale(0.98);
+}
+
+.staff-table thead tr th:first-child,
+.staff-table tbody tr td:first-child {
+  padding-left: 20px;
+}
+
+.staff-table thead tr th:last-child,
+.staff-table tbody tr td:last-child {
+  padding-right: 20px;
 }
 
 .status-select {
@@ -345,6 +425,20 @@
   color: #dc2626;
 }
 
+.action-icon.download {
+  color: #3b82f6;
+}
+
+.action-icon.download:hover {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.action-icon.download:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-delete {
   padding: 6px 12px;
   background: #ef4444;
@@ -358,6 +452,106 @@
 
 .btn-delete:hover {
   background: #dc2626;
+}
+
+/* Action Dropdown */
+.action-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.action-dropdown-btn {
+  padding: 8px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.action-dropdown-btn:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.action-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 5px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 150px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.action-menu-item {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: white;
+  color: #374151;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-menu-item:hover {
+  background: #f9fafb;
+}
+
+.action-menu-item.view {
+  color: #3b82f6;
+}
+
+.action-menu-item.view:hover {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.action-menu-item.edit {
+  color: #10b981;
+}
+
+.action-menu-item.edit:hover {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.action-menu-item.delete {
+  color: #ef4444;
+}
+
+.action-menu-item.delete:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.action-menu-item:not(:last-child) {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.staff-table .no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+  font-size: 1rem;
+  font-style: italic;
+  border: none !important;
 }
 
 .no-data {

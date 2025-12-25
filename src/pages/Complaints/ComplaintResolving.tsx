@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { usePagePermissions } from '../../hooks/usePagePermissions';
+import Icon from '../../components/Icons';
 import '../Staffs/StaffManagement.css';
 
 interface Complaint {
@@ -23,6 +26,8 @@ const ComplaintResolving = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [resolution, setResolution] = useState('');
+  const navigate = useNavigate();
+  const { canEditDelete } = usePagePermissions('Complaints');
 
   useEffect(() => {
     fetchComplaints();
@@ -46,6 +51,12 @@ const ComplaintResolving = () => {
   };
 
   const handleStatusUpdate = async (id: string, newStatus: string, resolutionText?: string) => {
+    // Partial access users cannot edit status - only full access users can
+    if (!canEditDelete) {
+      alert('You do not have permission to update complaint status. Partial access users can only create and submit their own data.');
+      return;
+    }
+    
     try {
       const updateData: any = { 
         status: newStatus,
@@ -74,19 +85,32 @@ const ComplaintResolving = () => {
 
   if (loading) {
     return (
-      <div className="staff-management">
-        <h2>Resolve Complaints</h2>
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p className="loading-text">Loading complaints...</p>
+      <div className="full-page">
+        <div className="staff-management">
+          <div className="page-header-with-back">
+            <button className="back-button" onClick={() => navigate('/complaints')}>
+            <Icon name="chevron-left" /> Back
+            </button>
+            <h2>Resolve Complaints</h2>
+          </div>
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p className="loading-text">Loading complaints...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="staff-management">
-      <h2>Resolve Complaints</h2>
+    <div className="full-page">
+      <div className="staff-management">
+        <div className="page-header-with-back">
+          <button className="back-button" onClick={() => navigate('/complaints')}>
+            <Icon name="chevron-left" /> Back
+          </button>
+          <h2>Resolve Complaints</h2>
+        </div>
       <div className="management-header">
         <input
           type="text"
@@ -116,13 +140,13 @@ const ComplaintResolving = () => {
               <th>Subject</th>
               <th>Priority</th>
               <th>Status</th>
-              <th>Actions</th>
+              {canEditDelete && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {filteredComplaints.length === 0 ? (
               <tr>
-                <td colSpan={7} className="no-data">No complaints found</td>
+                <td colSpan={canEditDelete ? 7 : 6} className="no-data">No complaints found</td>
               </tr>
             ) : (
               filteredComplaints.map((complaint) => (
@@ -137,25 +161,33 @@ const ComplaintResolving = () => {
                     </span>
                   </td>
                   <td>
-                    <select
-                      value={complaint.status}
-                      onChange={(e) => handleStatusUpdate(complaint.id, e.target.value)}
-                      className={`status-select ${complaint.status}`}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="in-progress">In Progress</option>
-                      <option value="resolved">Resolved</option>
-                    </select>
+                    {canEditDelete ? (
+                      <select
+                        value={complaint.status}
+                        onChange={(e) => handleStatusUpdate(complaint.id, e.target.value)}
+                        className={`status-select ${complaint.status}`}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                      </select>
+                    ) : (
+                      <span className={`status-badge ${complaint.status}`}>
+                        {complaint.status}
+                      </span>
+                    )}
                   </td>
-                  <td>
-                    <button
-                      onClick={() => setSelectedComplaint(complaint)}
-                      className="btn-delete"
-                      style={{ background: '#3b82f6' }}
-                    >
-                      View/Resolve
-                    </button>
-                  </td>
+                  {canEditDelete && (
+                    <td>
+                      <button
+                        onClick={() => setSelectedComplaint(complaint)}
+                        className="btn-delete"
+                        style={{ background: '#3b82f6' }}
+                      >
+                        View/Resolve
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))
             )}
@@ -186,12 +218,14 @@ const ComplaintResolving = () => {
               </div>
             </div>
             <div className="modal-actions">
-              <button
-                onClick={() => handleStatusUpdate(selectedComplaint.id, 'resolved', resolution)}
-                className="btn btn-primary"
-              >
-                Mark as Resolved
-              </button>
+              {canEditDelete && (
+                <button
+                  onClick={() => handleStatusUpdate(selectedComplaint.id, 'resolved', resolution)}
+                  className="btn btn-primary"
+                >
+                  Mark as Resolved
+                </button>
+              )}
               <button
                 onClick={() => setSelectedComplaint(null)}
                 className="btn btn-secondary"
@@ -202,6 +236,7 @@ const ComplaintResolving = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

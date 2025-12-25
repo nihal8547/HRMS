@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../../firebase/config';
+import { useNavigate } from 'react-router-dom';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../../firebase/config';
+import { fetchUserRole, isAdmin } from '../../utils/userRole';
+import Icon from '../../components/Icons';
 import '../Staffs/StaffManagement.css';
 
 interface OvertimeRecord {
@@ -17,10 +21,24 @@ const OvertimeCalculation = () => {
   const [overtimeRecords, setOvertimeRecords] = useState<OvertimeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [payrollSettings, setPayrollSettings] = useState<any>(null);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [userRole, setUserRole] = useState<string>('');
+  const [isAdminUser, setIsAdminUser] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchPayrollSettings();
-    fetchOvertimeRecords();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUserId(user.uid);
+        const role = await fetchUserRole(user.uid);
+        setUserRole(role);
+        setIsAdminUser(isAdmin(role));
+        await fetchPayrollSettings();
+        await fetchOvertimeRecords(user.uid, role);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const fetchPayrollSettings = async () => {
@@ -34,11 +52,31 @@ const OvertimeCalculation = () => {
     }
   };
 
-  const fetchOvertimeRecords = async () => {
+  const fetchOvertimeRecords = async (uid: string, role: string) => {
     try {
-      const overtimeSnapshot = await getDocs(collection(db, 'overtime'));
-      const staffsSnapshot = await getDocs(collection(db, 'staffs'));
-      const staffsMap = new Map(staffsSnapshot.docs.map(doc => [doc.data().employeeId, doc.data()]));
+      const adminUser = isAdmin(role);
+      let overtimeSnapshot;
+      
+      // Import fetchAllEmployees once at the top of the function
+      const { fetchAllEmployees } = await import('../../utils/fetchEmployees');
+      const allEmployees = await fetchAllEmployees();
+      
+      if (adminUser) {
+        overtimeSnapshot = await getDocs(collection(db, 'overtime'));
+      } else {
+        // Get employeeId from employees/staffs collection
+        const userEmployee = allEmployees.find(emp => 
+          emp.id === uid || emp.authUserId === uid
+        );
+        
+        if (userEmployee?.employeeId) {
+          overtimeSnapshot = await getDocs(query(collection(db, 'overtime'), where('employeeId', '==', userEmployee.employeeId)));
+        } else {
+          overtimeSnapshot = await getDocs(query(collection(db, 'overtime'), where('employeeId', '==', '')));
+        }
+      }
+      
+      const staffsMap = new Map(allEmployees.map(emp => [emp.employeeId, emp]));
       
       const records: OvertimeRecord[] = [];
       overtimeSnapshot.docs.forEach(doc => {
@@ -48,7 +86,7 @@ const OvertimeCalculation = () => {
         records.push({
           id: doc.id,
           employeeId: data.employeeId,
-          name: staff?.name || 'Unknown',
+          name: staff?.name || staff?.fullName || 'Unknown',
           hours: data.hours || 0,
           date: data.date || '',
           rate: rate,
@@ -65,28 +103,43 @@ const OvertimeCalculation = () => {
   };
 
   useEffect(() => {
-    if (payrollSettings) {
-      fetchOvertimeRecords();
+    if (payrollSettings && currentUserId && userRole) {
+      fetchOvertimeRecords(currentUserId, userRole);
     }
-  }, [payrollSettings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payrollSettings, currentUserId, userRole]);
 
   const totalOvertime = overtimeRecords.reduce((sum, record) => sum + record.total, 0);
 
   if (loading) {
     return (
-      <div className="staff-management">
-        <h2>Overtime Calculation</h2>
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p className="loading-text">Loading overtime calculations...</p>
+      <div className="full-page">
+        <div className="staff-management">
+          <div className="page-header-with-back">
+            <button className="back-button" onClick={() => navigate('/payrolls')}>
+              <Icon name="chevron-left" /> Back
+            </button>
+            <h2>Overtime Calculation</h2>
+          </div>
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p className="loading-text">Loading overtime calculations...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="staff-management">
-      <h2>Overtime Calculation</h2>
+    <div className="full-page">
+      <div className="staff-management">
+        <div className="page-header-with-back">
+          <button className="back-button" onClick={() => navigate('/payrolls')}>
+            <Icon name="chevron-left" /> Back
+            <Icon name="chevron-left" /> Back
+          </button>
+          <h2>Overtime Calculation</h2>
+        </div>
       <div className="management-header">
         <div className="overtime-summary">
           <strong>Total Overtime Payment: ${totalOvertime.toFixed(2)}</strong>
@@ -123,6 +176,7 @@ const OvertimeCalculation = () => {
             )}
           </tbody>
         </table>
+      </div>
       </div>
     </div>
   );

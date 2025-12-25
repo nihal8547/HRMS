@@ -1,0 +1,324 @@
+.payroll-form-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.payroll-form-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.form-header h3 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.5rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.close-btn:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.payroll-form-content .form-group {
+  margin-bottom: 16px;
+}
+
+.payroll-form-content .form-group label {
+  display: block;
+  margin-bottom: 6px;
+  color: #374151;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.payroll-form-content .form-group input,
+.payroll-form-content .form-group select,
+.payroll-form-content .form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.payroll-form-content .form-group input:focus,
+.payroll-form-content .form-group select:focus,
+.payroll-form-content .form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.payroll-form-content .form-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btn-upload {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-upload:hover {
+  background: #7c3aed;
+}
+
+.btn-upload:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.btn-upload input[type="file"] {
+  display: none;
+}
+
+.management-header-section {
+  margin-bottom: 24px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: visible;
+  box-sizing: border-box;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.paid {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+/* Page container - prevent overflow but allow visible content */
+.payroll-management {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: visible !important;
+  overflow-y: visible;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Table container with horizontal scroll on mobile */
+.staff-table-container {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 40px;
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.staff-table {
+  width: 100%;
+  min-width: max-content; /* Ensure table shows all columns */
+  table-layout: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* Ensure table columns are fully visible with proper styling */
+.staff-table th {
+  background: #f9fafb;
+  padding: 16px 20px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.staff-table th:last-child {
+  border-right: none;
+}
+
+.staff-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  border-right: 1px solid #f3f4f6;
+  color: #1f2937;
+  font-size: 0.95rem;
+  vertical-align: middle;
+  white-space: nowrap;
+  min-width: fit-content;
+}
+
+.staff-table td:last-child {
+  border-right: none;
+}
+
+.staff-table tbody tr {
+  transition: background 0.15s;
+}
+
+.staff-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.staff-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+@media (max-width: 768px) {
+  .payroll-management {
+    padding-bottom: 160px !important; /* Extra space for footer */
+  }
+
+  .payroll-form-content {
+    padding: 16px;
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+
+  .payroll-form-content .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .management-header {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: visible !important;
+    box-sizing: border-box;
+  }
+
+  .action-buttons {
+    flex-wrap: wrap;
+  }
+
+  /* Table styling for mobile */
+  .staff-table-container {
+    margin-bottom: 40px;
+    border-radius: 8px;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+  }
+
+  .staff-table {
+    font-size: 0.85rem;
+    min-width: 1100px; /* Minimum width to show all columns */
+  }
+
+  .staff-table th,
+  .staff-table td {
+    padding: 10px 8px;
+    white-space: nowrap;
+  }
+
+  /* Action icons on mobile */
+  .action-icons {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* No data message */
+  .staff-table .no-data {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+    font-size: 1rem;
+    font-style: italic;
+    white-space: normal;
+  }
+}
+
+/* Desktop: Ensure table is fully visible */
+@media (min-width: 769px) {
+  .staff-table-container {
+    overflow-x: auto;
+  }
+
+  .staff-table {
+    width: 100%;
+  }
+}
+
+

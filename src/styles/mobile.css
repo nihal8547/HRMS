@@ -1,0 +1,992 @@
+/* Mobile Responsive Styles for HRMS Application */
+
+/* Standard Mobile Button Sizes */
+@media (max-width: 768px) {
+  /* Enhanced body and base styles */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Standard button sizes for mobile - Enhanced */
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  button[type="submit"],
+  button[type="button"]:not(.action-icon):not(.logout-btn) {
+    padding: 15px 24px !important;
+    font-size: 1rem !important;
+    min-height: 52px; /* Better touch target size */
+    font-weight: 600;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 100%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+  }
+
+  /* Form buttons - Enhanced with gradients and shadows */
+  .btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  }
+
+  .btn-primary:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+  }
+
+  .btn-secondary {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.25);
+  }
+
+  .btn-secondary:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 6px rgba(107, 114, 128, 0.2);
+  }
+
+  /* Small action buttons (icon buttons) */
+  .action-icon,
+  .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+  }
+
+  /* Export and New Record buttons - Enhanced */
+  .btn-export,
+  .btn-new-record {
+    padding: 13px 22px !important;
+    font-size: 0.95rem !important;
+    min-height: 48px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn-export:active,
+  .btn-new-record:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  .btn-new-record {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+  }
+
+  /* Save and Cancel buttons - Enhanced */
+  .btn-save,
+  .btn-cancel {
+    padding: 15px 24px !important;
+    font-size: 1rem !important;
+    min-height: 52px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-save {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+  }
+
+  .btn-save:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-cancel:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 6px rgba(107, 114, 128, 0.2);
+  }
+
+  /* Form inputs - Enhanced with better styling */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="date"],
+  input[type="password"],
+  input[type="number"],
+  select,
+  textarea {
+    padding: 15px 18px !important;
+    font-size: 1rem !important;
+    min-height: 52px;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    background: #ffffff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="tel"]:focus,
+  input[type="date"]:focus,
+  input[type="password"]:focus,
+  input[type="number"]:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 2px 8px rgba(59, 130, 246, 0.15);
+    transform: translateY(-1px);
+  }
+
+  /* Tables - make responsive */
+  .staff-table-container,
+  .table-container,
+  .submitted-overtime-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+    width: 100%;
+    margin-bottom: 30px !important; /* Extra margin to prevent hiding under footer */
+  }
+
+  table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+    width: 100%;
+  }
+
+  .staff-table,
+  table {
+    display: table;
+    width: 100%;
+    min-width: 600px; /* Ensure table doesn't get too compressed */
+    font-size: 0.85rem;
+  }
+
+  /* Table header and cells - Enhanced styling */
+  .staff-table th,
+  .staff-table td,
+  table th,
+  table td {
+    padding: 14px 12px !important;
+    font-size: 0.875rem;
+    word-wrap: break-word;
+    max-width: 150px;
+  }
+
+  /* Table headers - Enhanced */
+  .staff-table th,
+  table th {
+    white-space: nowrap;
+    font-weight: 700;
+    font-size: 0.8rem;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  /* Table cells - Enhanced with better spacing */
+  .staff-table td,
+  table td {
+    word-break: break-word;
+    vertical-align: middle;
+    color: #1f2937;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .staff-table tbody tr:hover,
+  table tbody tr:hover {
+    background: #f9fafb;
+  }
+
+  /* Ensure table containers are scrollable */
+  .staff-table-container {
+    position: relative;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Cards and containers - Enhanced with better shadows and styling */
+  .stat-card,
+  .info-card,
+  .dashboard-section,
+  .role-permission-card {
+    padding: 20px !important;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    background: #ffffff;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .stat-card:hover,
+  .info-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+    transform: translateY(-2px);
+  }
+
+  /* Headers */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2 {
+    font-size: 1.3rem !important;
+  }
+
+  h3 {
+    font-size: 1.1rem !important;
+  }
+
+  /* Page headers - Enhanced */
+  .top-header {
+    padding: 18px 20px !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .top-header h1 {
+    font-size: 1.3rem !important;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: -0.3px;
+  }
+
+  /* Content area padding */
+  .content-area {
+    padding: 20px 16px !important;
+    padding-bottom: calc(30px + 150px) !important; /* Extra space for bottom nav (max 140px + safe area + buffer) */
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* Full page wrapper */
+  .full-page {
+    margin: -16px -16px !important;
+    padding: 16px !important;
+    padding-bottom: calc(30px + 150px) !important; /* Extra space for bottom nav (max 140px + safe area + buffer) */
+    width: calc(100% + 32px) !important;
+  }
+
+  /* Form groups */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  /* Form rows - stack on mobile */
+  .form-row {
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+
+  /* Action buttons container */
+  .action-buttons {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+    margin-left: 0 !important;
+    margin-top: 16px;
+  }
+
+  .action-buttons .btn-export,
+  .action-buttons .btn-new-record {
+    width: 100%;
+  }
+
+  /* Search and filter controls - Enhanced */
+  .search-input,
+  .filter-select {
+    width: 100%;
+    min-height: 52px;
+    padding: 15px 18px !important;
+    font-size: 1rem !important;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    background: #ffffff;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .search-input:focus,
+  .filter-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 2px 8px rgba(59, 130, 246, 0.15);
+    transform: translateY(-1px);
+  }
+
+  /* Management header */
+  .management-header {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* Page containers - ensure bottom spacing */
+  .staff-management,
+  .staff-create,
+  .requests-management {
+    padding-bottom: 160px !important; /* Extra space to prevent content hiding under footer (max 140px + safe area + buffer) */
+  }
+
+  /* Table containers - extra margin and enhanced styling */
+  .staff-table-container,
+  .table-container,
+  .submitted-overtime-table-container {
+    margin-bottom: 40px !important; /* Extra margin to ensure tables are visible above footer */
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    background: #ffffff;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+  }
+
+  /* Summary sections and bottom elements - ensure visibility */
+  .total-hours,
+  div[style*="margin-top"][style*="padding:"] {
+    margin-bottom: 30px !important;
+  }
+
+  /* Stats grid - two columns on mobile */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px;
+  }
+
+  /* Stat card adjustments for 2-column layout - Enhanced */
+  .stat-card {
+    padding: 20px 16px !important;
+    gap: 14px;
+    flex-direction: column;
+    text-align: center;
+    border-top: 4px solid;
+    border-top-color: #3b82f6;
+  }
+
+  .stat-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 1.75rem;
+    margin: 0 auto;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  }
+
+  .stat-content h3 {
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: -0.5px;
+  }
+
+  /* Permission summary stats */
+  .permission-summary-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .permission-stat {
+    width: 100%;
+  }
+
+  /* Role permissions grid */
+  .role-permissions-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  /* Modal improvements - Enhanced */
+  .modal-overlay {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .modal-content {
+    width: 95% !important;
+    max-width: 95% !important;
+    padding: 24px !important;
+    margin: 20px;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.2);
+    background: #ffffff;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+  }
+
+  /* Back button */
+  .back-button {
+    padding: 10px 16px !important;
+    font-size: 0.95rem !important;
+    min-height: 44px;
+  }
+
+  /* Page header with back */
+  .page-header-with-back {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .page-header-with-back h2 {
+    font-size: 1.25rem !important;
+    margin: 0;
+  }
+
+  /* Status selects */
+  .status-select {
+    padding: 10px 32px 10px 12px !important;
+    font-size: 0.9rem !important;
+    min-height: 44px;
+  }
+
+  /* Badges - Enhanced styling */
+  .status-badge,
+  .priority-badge {
+    padding: 7px 14px !important;
+    font-size: 0.8rem !important;
+    font-weight: 600;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-transform: capitalize;
+  }
+
+  .status-badge.approved {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+  }
+
+  .status-badge.rejected {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+  }
+
+  .status-badge.pending {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+  }
+
+  /* Action icons in tables - Enhanced */
+  .action-icons {
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .action-icon {
+    min-width: 42px;
+    min-height: 42px;
+    padding: 9px;
+    border-radius: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  .action-icon:hover {
+    background: rgba(59, 130, 246, 0.1);
+    transform: scale(1.1);
+  }
+
+  .action-icon:active {
+    transform: scale(0.95);
+  }
+
+  .action-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Settings page improvements */
+  .settings-container {
+    padding: 16px !important;
+  }
+
+  .settings-tabs {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .settings-tab {
+    padding: 12px 16px !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Dashboard improvements */
+  .dashboard h2 {
+    font-size: 1.5rem !important;
+    margin-bottom: 20px;
+  }
+
+  /* All table improvements - ensure consistency across all pages */
+  .staff-table,
+  table {
+    font-size: 0.85rem;
+    min-width: 600px;
+  }
+
+  .staff-table th,
+  .staff-table td,
+  table th,
+  table td {
+    padding: 12px 8px !important;
+    font-size: 0.85rem;
+  }
+
+  /* Table headers - no wrap */
+  .staff-table th,
+  table th {
+    white-space: nowrap;
+  }
+
+  /* Table cells - allow wrapping but limit width */
+  .staff-table td,
+  table td {
+    word-wrap: break-word;
+    max-width: 200px;
+  }
+
+  /* No data message */
+  .no-data {
+    padding: 30px 16px !important;
+    font-size: 0.95rem;
+  }
+
+  /* Staff create form improvements */
+  .staff-form .form-row {
+    flex-direction: column;
+  }
+
+  .employee-id-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .employee-id-container .btn-auto-generate {
+    width: 100%;
+    padding: 12px 16px !important;
+  }
+
+  /* Settings tabs */
+  .settings-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .settings-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Dashboard stats */
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+  }
+
+  .stat-card {
+    padding: 20px !important;
+    gap: 16px;
+  }
+
+  .stat-content h3 {
+    font-size: 0.85rem;
+  }
+
+  /* Cards and sections */
+  .dashboard-section {
+    padding: 20px 16px !important;
+  }
+
+  /* Table improvements for mobile - make tables scrollable */
+  .staff-table-container,
+  table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+    width: 100%;
+  }
+
+  .staff-table,
+  table {
+    display: table;
+    width: 100%;
+    min-width: 600px; /* Ensure table doesn't get too compressed */
+  }
+
+  .staff-table th,
+  .staff-table td,
+  table th,
+  table td {
+    font-size: 0.85rem;
+    padding: 12px 10px !important;
+  }
+
+  /* Prevent text wrapping in table cells for better readability */
+  .staff-table th,
+  table th {
+    white-space: nowrap;
+  }
+
+  /* Allow some wrapping in table cells if needed */
+  .staff-table td,
+  table td {
+    word-break: break-word;
+    max-width: 150px;
+  }
+
+  /* Filter and search controls */
+  .filter-select {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  /* Action buttons in table rows */
+  .action-icons {
+    flex-wrap: nowrap;
+  }
+
+  /* Form improvements - Enhanced */
+  .form-group textarea {
+    min-height: 120px;
+    padding: 15px 18px !important;
+    border-radius: 12px;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.6;
+  }
+
+  .form-group label {
+    color: #374151;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+    letter-spacing: 0.2px;
+  }
+
+  /* Checkbox improvements - Enhanced */
+  input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 2px solid #d1d5db;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    accent-color: #3b82f6;
+  }
+
+  input[type="checkbox"]:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  input[type="checkbox"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  }
+
+  /* Select dropdowns - Enhanced */
+  select {
+    background-size: 20px;
+    padding-right: 45px !important;
+    background-position: right 14px center;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+  }
+
+  select:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  }
+
+  /* Profile and employee profile */
+  .profile-info-grid,
+  .info-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  /* Profile sections */
+  .profile-section,
+  .section-content {
+    padding: 16px;
+  }
+
+  /* Profile header */
+  .profile-header {
+    padding: 20px 16px;
+  }
+
+  /* Complaint and request forms */
+  .complaint-form,
+  .request-form {
+    padding: 16px;
+  }
+
+  /* Overtime and payroll forms */
+  .overtime-form,
+  .payroll-form {
+    padding: 16px;
+  }
+
+  /* Leave request form */
+  .leave-form {
+    padding: 16px;
+  }
+
+  /* Modal improvements */
+  .modal-overlay {
+    padding: 10px;
+  }
+
+  .modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Permission cards */
+  .role-permission-card {
+    padding: 16px !important;
+  }
+
+  /* Role management */
+  .role-management-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .btn-create-role {
+    width: 100%;
+  }
+
+  /* Create role form */
+  .create-role-form {
+    padding: 20px 16px !important;
+  }
+
+  /* Department management */
+  .department-management-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .btn-create-department {
+    width: 100%;
+  }
+
+  /* Overtime page improvements */
+  .overtime-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Schedules page improvements */
+  .schedule-form {
+    padding: 16px;
+  }
+
+  /* Payroll Management page improvements */
+  .payroll-form-content {
+    padding: 16px;
+  }
+
+  /* Documents page improvements */
+  .documents-controls {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Complaints page improvements */
+  .complaint-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Leave page improvements */
+  .leave-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* All page headers with buttons - stack on mobile */
+  .page-header,
+  .page-header-actions {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .page-header-actions .btn,
+  .page-header .btn {
+    width: 100%;
+  }
+
+  /* Ensure all table containers scroll properly */
+  .table-wrapper,
+  .data-table-container {
+    position: relative;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin: 0;
+  }
+
+  /* Button groups - stack vertically */
+  .btn-group,
+  .button-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .btn-group .btn,
+  .button-group .btn {
+    width: 100%;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  .content-area {
+    padding: 16px 12px !important;
+  }
+
+  .top-header {
+    padding: 12px 16px !important;
+  }
+
+  .top-header h1 {
+    font-size: 1.1rem !important;
+  }
+
+  h2 {
+    font-size: 1.2rem !important;
+  }
+
+  .info-card {
+    padding: 16px !important;
+  }
+
+  /* Dashboard stat cards - maintain 2 columns even on extra small */
+  .dashboard .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+
+  .dashboard .stat-card {
+    padding: 14px !important;
+    gap: 10px;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .dashboard .stat-icon {
+    width: 45px;
+    height: 45px;
+    font-size: 1.3rem;
+    margin: 0 auto;
+  }
+
+  .dashboard .stat-content {
+    width: 100%;
+  }
+
+  .dashboard .stat-content h3 {
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+  }
+
+  .dashboard .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .bottom-nav-label {
+    font-size: 0.65rem;
+  }
+
+  .bottom-nav-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Extra small tables */
+  .staff-table th,
+  .staff-table td,
+  table th,
+  table td {
+    padding: 10px 6px !important;
+    font-size: 0.8rem;
+  }
+
+  .staff-table,
+  table {
+    min-width: 650px;
+  }
+
+  .action-icon {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 6px;
+  }
+
+  .action-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .status-badge,
+  .priority-badge {
+    font-size: 0.75rem !important;
+    padding: 4px 8px !important;
+  }
+
+  .status-select {
+    padding: 8px 28px 8px 10px !important;
+    font-size: 0.85rem !important;
+    min-height: 38px;
+  }
+}
+

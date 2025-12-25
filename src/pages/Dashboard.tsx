@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../firebase/config';
+import { getEmployeeCount } from '../utils/fetchEmployees';
+import { fetchUserRole, isAdmin } from '../utils/userRole';
 import Icon from '../components/Icons';
 import './Dashboard.css';
 
@@ -11,13 +14,32 @@ const Dashboard = () => {
     activeRequests: 0,
     unresolvedComplaints: 0
   });
+  const [userRole, setUserRole] = useState<string>('');
+  const [isAdminUser, setIsAdminUser] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        // Fetch staffs count
-        const staffsSnapshot = await getDocs(collection(db, 'staffs'));
-        setStats(prev => ({ ...prev, totalStaffs: staffsSnapshot.size }));
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUserId(user.uid);
+        const role = await fetchUserRole(user.uid);
+        setUserRole(role);
+        setIsAdminUser(isAdmin(role));
+        await fetchStats(user.uid, role);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const fetchStats = async (uid: string, role: string) => {
+    try {
+      const adminUser = isAdmin(role);
+
+      if (adminUser) {
+        // Admin can see all stats
+        const totalStaffs = await getEmployeeCount();
+        setStats(prev => ({ ...prev, totalStaffs }));
 
         // Fetch pending leaves
         const leavesSnapshot = await getDocs(collection(db, 'leaves'));
@@ -39,13 +61,38 @@ const Dashboard = () => {
           doc => doc.data().status !== 'resolved'
         ).length;
         setStats(prev => ({ ...prev, unresolvedComplaints }));
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      }
-    };
+      } else {
+        // Non-admin users see only their own data
+        setStats(prev => ({ ...prev, totalStaffs: 1 })); // Only themselves
 
-    fetchStats();
-  }, []);
+        // Fetch only user's own leaves
+        const leavesQuery = query(collection(db, 'leaves'), where('employeeId', '==', uid));
+        const leavesSnapshot = await getDocs(leavesQuery);
+        const pendingLeaves = leavesSnapshot.docs.filter(
+          doc => doc.data().status === 'pending'
+        ).length;
+        setStats(prev => ({ ...prev, pendingLeaves }));
+
+        // Fetch only user's own requests
+        const requestsQuery = query(collection(db, 'requests'), where('employeeId', '==', uid));
+        const requestsSnapshot = await getDocs(requestsQuery);
+        const activeRequests = requestsSnapshot.docs.filter(
+          doc => doc.data().status === 'active' || doc.data().status === 'pending'
+        ).length;
+        setStats(prev => ({ ...prev, activeRequests }));
+
+        // Fetch only user's own complaints
+        const complaintsQuery = query(collection(db, 'complaints'), where('employeeId', '==', uid));
+        const complaintsSnapshot = await getDocs(complaintsQuery);
+        const unresolvedComplaints = complaintsSnapshot.docs.filter(
+          doc => doc.data().status !== 'resolved'
+        ).length;
+        setStats(prev => ({ ...prev, unresolvedComplaints }));
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
 
   const statCards = [
     { title: 'Total Staffs', value: stats.totalStaffs, icon: 'users', color: '#3b82f6' },
@@ -81,6 +128,7 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
 
 
 
