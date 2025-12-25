@@ -27,6 +27,7 @@ interface Staff {
   joinDate: string;
   status: string;
   authUserId?: string;
+  profileImageUrl?: string;
 }
 
 const Staffs = () => {
@@ -127,7 +128,8 @@ const Staffs = () => {
           employeeId: emp.employeeId || '',
           joinDate: emp.joinDate || '',
               status: emp.status || 'active',
-              authUserId: (emp as any).authUserId || emp.id
+              authUserId: (emp as any).authUserId || emp.id,
+              profileImageUrl: (emp as any).profileImageUrl || ''
             });
           }
         });
@@ -230,15 +232,14 @@ const Staffs = () => {
   const handleExport = () => {
     // Export functionality
     const csvContent = [
-      ['Emp ID', 'Name', 'Email', 'Phone', 'Department', 'Join Date', 'Status'],
+      ['Emp ID', 'Name', 'Email', 'Phone', 'Department', 'Join Date'],
       ...filteredStaffs.map(staff => [
         staff.employeeId,
         staff.name,
         staff.email,
         staff.phone,
         staff.department,
-        staff.joinDate,
-        staff.status
+        staff.joinDate
       ])
     ].map(row => row.join(',')).join('\n');
     
@@ -313,12 +314,6 @@ const Staffs = () => {
             <option key={dept} value={dept}>{dept}</option>
           ))}
         </select>
-        <select className="filter-select">
-          <option>All Status</option>
-          <option>Active</option>
-          <option>Inactive</option>
-          <option>On Leave</option>
-        </select>
         <div className="action-buttons">
           <div className="view-toggle">
             <button
@@ -349,6 +344,12 @@ const Staffs = () => {
         <table className="staff-table">
           <thead>
             <tr>
+              <th>
+                <div className="table-header-with-icon">
+                  <Icon name="user" />
+                  <span>Image</span>
+                </div>
+              </th>
               <th>
                 <div className="table-header-with-icon">
                   <Icon name="id-card" />
@@ -387,12 +388,6 @@ const Staffs = () => {
               </th>
               <th>
                 <div className="table-header-with-icon">
-                  <Icon name="check-circle" />
-                  <span>Status</span>
-                </div>
-              </th>
-              <th>
-                <div className="table-header-with-icon">
                   <Icon name="settings" />
                   <span>Actions</span>
                 </div>
@@ -407,6 +402,26 @@ const Staffs = () => {
             ) : (
               filteredStaffs.map((staff) => (
                 <tr key={staff.id}>
+                  <td>
+                    <div className="staff-image-cell">
+                      {staff.profileImageUrl ? (
+                        <img 
+                          src={staff.profileImageUrl} 
+                          alt={staff.name}
+                          className="staff-table-image"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      {!staff.profileImageUrl && (
+                        <div className="staff-table-image-placeholder">
+                          <Icon name="user" />
+                        </div>
+                      )}
+                    </div>
+                  </td>
                   <td>{staff.employeeId}</td>
                   <td>
                     <span 
@@ -421,23 +436,6 @@ const Staffs = () => {
                   <td>{staff.phone}</td>
                   <td>{staff.department}</td>
                   <td>{staff.joinDate}</td>
-                  <td>
-                    {(isAdminUser || canEdit) ? (
-                      <select
-                        value={staff.status || 'active'}
-                        onChange={(e) => handleStatusChange(staff.id, e.target.value)}
-                        className={`status-select ${staff.status}`}
-                      >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="on-leave">On Leave</option>
-                      </select>
-                    ) : (
-                      <span className={`status-badge ${staff.status}`}>
-                        {staff.status || 'active'}
-                      </span>
-                    )}
-                  </td>
                   <td>
                     <div className="action-icons">
                       <button 
@@ -483,10 +481,27 @@ const Staffs = () => {
             <div className="staff-cards-grid">
               {filteredStaffs.map((staff) => (
                 <div key={staff.id} className="staff-card">
+                  <div className="staff-card-image-container">
+                    {staff.profileImageUrl ? (
+                      <img 
+                        src={staff.profileImageUrl} 
+                        alt={staff.name}
+                        className="staff-card-image"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    {!staff.profileImageUrl && (
+                      <div className="staff-card-image-placeholder">
+                        <Icon name="user" />
+                      </div>
+                    )}
+                  </div>
                   <div className="staff-card-header">
                     <div className="staff-card-info">
                       <div className="staff-card-name-row">
-                        <Icon name="user" />
                         <h3 
                           className="staff-card-name"
                           onClick={() => handleViewProfile(staff)}
@@ -499,23 +514,6 @@ const Staffs = () => {
                         <Icon name="id-card" />
                         <p className="staff-card-id">ID: {staff.employeeId}</p>
                       </div>
-                    </div>
-                    <div className="staff-card-status">
-                      {(isAdminUser || canEdit) ? (
-                        <select
-                          value={staff.status || 'active'}
-                          onChange={(e) => handleStatusChange(staff.id, e.target.value)}
-                          className={`status-select-card ${staff.status}`}
-                        >
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                          <option value="on-leave">On Leave</option>
-                        </select>
-                      ) : (
-                        <span className={`status-badge-card ${staff.status}`}>
-                          {staff.status || 'active'}
-                        </span>
-                      )}
                     </div>
                   </div>
                   <div className="staff-card-body">

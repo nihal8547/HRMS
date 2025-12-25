@@ -1093,6 +1093,84 @@
   font-size: 1rem;
 }
 
+/* Staff Image Styles */
+.staff-image-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+}
+
+.staff-table-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+  background: white;
+}
+
+.staff-table-image-placeholder {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e5e7eb;
+  color: #9ca3af;
+}
+
+.staff-table-image-placeholder svg {
+  width: 24px;
+  height: 24px;
+}
+
+.staff-table-image-placeholder.hidden {
+  display: none;
+}
+
+/* Card View Image Styles */
+.staff-card-image-container {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.staff-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.staff-card-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  color: #9ca3af;
+}
+
+.staff-card-image-placeholder svg {
+  width: 80px;
+  height: 80px;
+  opacity: 0.5;
+}
+
+.staff-card-image-placeholder.hidden {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .staff-cards-grid {
     grid-template-columns: 1fr;
@@ -1104,6 +1182,21 @@
 
   .action-buttons {
     flex-wrap: wrap;
+  }
+
+  .staff-image-cell {
+    width: 40px;
+    height: 40px;
+  }
+
+  .staff-table-image,
+  .staff-table-image-placeholder {
+    width: 40px;
+    height: 40px;
+  }
+
+  .staff-card-image-container {
+    height: 180px;
   }
 }
 

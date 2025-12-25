@@ -90,8 +90,8 @@ const Complaints = () => {
       };
       const permission = rolePermission ? getPermissionLevel(rolePermission.pages['Complaints']) : 'edit';
       
-      // Admin, edit, or view users can see all complaints (view users see all data including admin updates)
-      if (adminUser || permission === 'edit' || permission === 'view') {
+      // STRICT ISOLATION: Only admins can see all complaints, all other users see only their own data
+      if (adminUser) {
         const snapshot = await getDocs(collection(db, 'complaints'));
         const complaintsData = snapshot.docs.map(doc => ({
           id: doc.id,
@@ -101,7 +101,7 @@ const Complaints = () => {
           (b.createdAt?.toDate?.()?.getTime() || 0) - (a.createdAt?.toDate?.()?.getTime() || 0)
         ));
       } else {
-        // No access or only own data
+        // Non-admin users can only see their own complaints
         const employees = await fetchAllEmployees();
         const userEmployee = employees.find(emp => 
           emp.id === uid || emp.authUserId === uid

@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase/config';
+import { collection, getDocs, doc, updateDoc, query, where } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth, db } from '../../firebase/config';
+import { fetchUserRole, isAdmin } from '../../utils/userRole';
+import { fetchAllEmployees } from '../../utils/fetchEmployees';
 import { usePagePermissions } from '../../hooks/usePagePermissions';
 import Icon from '../../components/Icons';
 import '../Staffs/StaffManagement.css';
@@ -26,20 +29,58 @@ const ComplaintResolving = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [resolution, setResolution] = useState('');
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [userRole, setUserRole] = useState<string>('');
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const navigate = useNavigate();
   const { canEditDelete } = usePagePermissions('Complaints');
 
   useEffect(() => {
-    fetchComplaints();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setCurrentUserId(user.uid);
+        const role = await fetchUserRole(user.uid);
+        setUserRole(role);
+        setIsAdminUser(isAdmin(role));
+        await fetchComplaints(user.uid, role);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const fetchComplaints = async () => {
+  const fetchComplaints = async (uid: string, role: string) => {
     try {
-      const snapshot = await getDocs(collection(db, 'complaints'));
+      setLoading(true);
+      const adminUser = isAdmin(role);
+      let snapshot;
+
+      if (adminUser) {
+        // Admin can see all complaints
+        snapshot = await getDocs(collection(db, 'complaints'));
+      } else {
+        // Non-admin users can only see their own complaints
+        const allEmployees = await fetchAllEmployees();
+        const userEmployee = allEmployees.find(emp => 
+          emp.id === uid || emp.authUserId === uid
+        );
+        
+        if (userEmployee?.employeeId) {
+          snapshot = await getDocs(query(
+            collection(db, 'complaints'),
+            where('employeeId', '==', userEmployee.employeeId)
+          ));
+        } else {
+          // No employee found, return empty
+          snapshot = { docs: [] } as any;
+        }
+      }
+
       const complaintsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Complaint[];
+      
       setComplaints(complaintsData.sort((a, b) => 
         b.createdAt?.toDate?.()?.getTime() - a.createdAt?.toDate?.()?.getTime()
       ));
@@ -67,7 +108,9 @@ const ComplaintResolving = () => {
         updateData.resolvedAt = new Date();
       }
       await updateDoc(doc(db, 'complaints', id), updateData);
-      fetchComplaints();
+      if (currentUserId && userRole) {
+        await fetchComplaints(currentUserId, userRole);
+      }
       setSelectedComplaint(null);
       setResolution('');
     } catch (error) {

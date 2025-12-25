@@ -4,6 +4,7 @@ import { auth } from '../firebase/config';
 import { doc, setDoc, getDoc, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config';
+import ImageCropper from '../components/ImageCropper';
 import './ProfileCompletion.css';
 
 interface ProfileData {
@@ -72,6 +73,8 @@ const ProfileCompletion = () => {
   const [passportImagePreview, setPassportImagePreview] = useState<string>('');
   const [medicalLicenseImagePreview, setMedicalLicenseImagePreview] = useState<string>('');
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string>('');
   const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
   const [userName, setUserName] = useState('');
   const [agreeToTerms, setAgreeToTerms] = useState(false);
@@ -155,23 +158,39 @@ const ProfileCompletion = () => {
 
   const generateEmployeeId = async () => {
     try {
-      // Get the highest existing employee ID
+      // Get the highest existing employee ID from both EMP and FMC prefixes
       const employeesRef = collection(db, 'employees');
-      const q = query(employeesRef, orderBy('employeeId', 'desc'), limit(1));
+      const q = query(employeesRef, orderBy('employeeId', 'desc'), limit(50));
       const snapshot = await getDocs(q);
       
-      let nextNumber = 1;
+      let maxEmpNumber = 0;
+      let maxFmcNumber = 0;
+      
       if (!snapshot.empty) {
-        const lastEmployeeId = snapshot.docs[0].data().employeeId;
-        if (lastEmployeeId && lastEmployeeId.startsWith('EMP')) {
-          const lastNumber = parseInt(lastEmployeeId.replace('EMP', ''));
-          if (!isNaN(lastNumber)) {
-            nextNumber = lastNumber + 1;
+        snapshot.docs.forEach(doc => {
+          const employeeId = doc.data().employeeId;
+          if (employeeId) {
+            // Check for EMP prefix
+            if (employeeId.startsWith('EMP')) {
+              const number = parseInt(employeeId.replace('EMP', ''), 10);
+              if (!isNaN(number) && number > maxEmpNumber) {
+                maxEmpNumber = number;
+              }
+            }
+            // Check for FMC prefix
+            if (employeeId.startsWith('FMC')) {
+              const number = parseInt(employeeId.replace('FMC', ''), 10);
+              if (!isNaN(number) && number > maxFmcNumber) {
+                maxFmcNumber = number;
+              }
+            }
           }
-        }
+        });
       }
       
-      const employeeId = `EMP${nextNumber.toString().padStart(3, '0')}`;
+      // Use the highest number from either prefix, then generate FMC ID
+      const nextNumber = Math.max(maxEmpNumber, maxFmcNumber) + 1;
+      const employeeId = `FMC${nextNumber.toString().padStart(3, '0')}`;
       setFormData(prev => ({ ...prev, employeeId }));
     } catch (error) {
       console.error('Error generating employee ID:', error);
@@ -247,6 +266,18 @@ const ProfileCompletion = () => {
     return requiredFields.every(field => field);
   };
 
+  const handleCroppedImage = (croppedBlob: Blob) => {
+    const file = new File([croppedBlob], 'profile.jpg', { type: 'image/jpeg' });
+    setProfileImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(croppedBlob);
+    setShowImageCropper(false);
+    setImageToCrop('');
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'qid' | 'passport' | 'medicalLicense') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -265,10 +296,11 @@ const ProfileCompletion = () => {
 
     // Set file and preview
     if (type === 'profile') {
-      setProfileImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProfileImagePreview(reader.result as string);
+        const imageSrc = reader.result as string;
+        setImageToCrop(imageSrc);
+        setShowImageCropper(true);
       };
       reader.readAsDataURL(file);
     } else if (type === 'qid') {
@@ -1071,6 +1103,19 @@ const ProfileCompletion = () => {
           </div>
         </form>
       </div>
+      
+      {showImageCropper && imageToCrop && (
+        <ImageCropper
+          imageSrc={imageToCrop}
+          onCrop={handleCroppedImage}
+          onCancel={() => {
+            setShowImageCropper(false);
+            setImageToCrop('');
+          }}
+          aspectRatio={1}
+          circular={true}
+        />
+      )}
     </div>
   );
 };
