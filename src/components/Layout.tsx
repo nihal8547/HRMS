@@ -180,6 +180,64 @@ const Layout = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Get current page name based on route
+  const getCurrentPageName = (): string => {
+    const path = location.pathname;
+    
+    // Map routes to page names
+    const routeToPageName: Record<string, string> = {
+      '/': 'Dashboard',
+      '/profile': 'My Profile',
+      '/documents': 'Documents',
+      '/staffs': 'Staffs Management',
+      '/leave': 'Leave Management',
+      '/requests': 'Requests Management',
+      '/complaints': 'Complaints Management',
+      '/fines': 'Fines Management',
+      '/schedules': 'Schedules Management',
+      '/payrolls': 'Payrolls Management',
+      '/overtime': 'Overtime Submission',
+      '/templates/birthday': 'Birthday Templates',
+      '/settings': 'Settings'
+    };
+
+    // Check for exact match first
+    if (routeToPageName[path]) {
+      return routeToPageName[path];
+    }
+
+    // Check for sub-routes (e.g., /staffs/create, /leave/request)
+    const pathParts = path.split('/').filter(Boolean);
+    if (pathParts.length > 0) {
+      const basePath = `/${pathParts[0]}`;
+      if (routeToPageName[basePath]) {
+        // Add sub-route name if available
+        const subRoute = pathParts[1];
+        if (subRoute) {
+          const subRouteNames: Record<string, string> = {
+            'create': 'Create Staff',
+            'edit': 'Edit Staff',
+            'request': 'Leave Request',
+            'status': 'Leave Status',
+            'registration': 'Complaint Registration',
+            'resolving': 'Complaint Resolving',
+            'purchasing': 'Item Purchasing',
+            'using': 'Item Using',
+            'management': 'Payroll Management',
+            'settings': 'Payroll Settings',
+            'overtime-calculation': 'Overtime Calculation'
+          };
+          const subName = subRouteNames[subRoute];
+          return subName || routeToPageName[basePath];
+        }
+        return routeToPageName[basePath];
+      }
+    }
+
+    // Default fallback
+    return 'Medical Staff Management System';
+  };
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -295,7 +353,7 @@ const Layout = () => {
       </aside>
       <main className="main-content">
         <header className="top-header">
-          <h1>Medical Staff Management System</h1>
+          <h1>{getCurrentPageName()}</h1>
         </header>
         <div className="content-area">
           <Outlet />

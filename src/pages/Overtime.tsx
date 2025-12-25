@@ -175,7 +175,7 @@ const Overtime = () => {
 
       setPastOvertimes(resetRecords);
     } catch (error) {
-      console.error('Error fetching past overtimes:', error);
+      // Error handled silently - user will see empty state
     } finally {
       setLoadingPastOvertimes(false);
     }
@@ -201,7 +201,8 @@ const Overtime = () => {
     if (currentUserId && (isAdminUser || currentUserData)) {
       fetchSubmittedOvertimes();
     }
-  }, [currentUserId, isAdminUser, currentUserData, fetchSubmittedOvertimes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUserId, isAdminUser, currentUserData]);
 
   const handleViewPastOvertime = async () => {
     setShowPastOvertimeModal(true);
@@ -244,7 +245,7 @@ const Overtime = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching current user data:', error);
+      // Error handled - continue with default values
     }
   };
 
@@ -587,6 +588,49 @@ const Overtime = () => {
     }
   };
 
+  const handleClearAllData = async () => {
+    if (!isAdminUser) {
+      alert('Only administrators can clear overtime data.');
+      return;
+    }
+
+    if (submittedOvertimes.length === 0) {
+      alert('No overtime records to clear.');
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to clear all ${submittedOvertimes.length} overtime record(s)?\n\nThis will move all current records to the Past Overtime section.`;
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const now = new Date();
+      const resetMonth = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); // e.g., "January 2024"
+      
+      // Update all current records to mark them as reset
+      const updatePromises = submittedOvertimes.map(record => 
+        updateDoc(doc(db, 'overtime', record.id!), {
+          isReset: true,
+          resetMonth: resetMonth,
+          resetAt: now
+        })
+      );
+
+      await Promise.all(updatePromises);
+      
+      setMessage(`Successfully cleared ${submittedOvertimes.length} overtime record(s). They are now available in Past Overtime section.`);
+      await fetchSubmittedOvertimes();
+      await fetchPastOvertimes();
+    } catch (error) {
+      console.error('Error clearing overtime data:', error);
+      setMessage('Error clearing overtime data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addModalEntry = () => {
     setModalEntries([...modalEntries, { date: '', fromTime: '', toTime: '', hours: 0, reason: '' }]);
   };
@@ -645,9 +689,6 @@ const Overtime = () => {
   const handleExportSingleRecord = async (record: SubmittedOvertime) => {
     try {
       setLoading(true);
-      
-      // Dynamically import jspdf-autotable to ensure it loads
-      await import('jspdf-autotable');
       
       // Create PDF for single record
       const doc = new jsPDF('p', 'mm', 'a4');
@@ -761,7 +802,6 @@ const Overtime = () => {
       doc.setTextColor(120, 120, 120);
       doc.setFont('helvetica', 'italic');
       doc.text('This is a computer-generated document. No signature required.', pageWidth / 2, footerY, { align: 'center' });
-      const now = new Date();
       doc.text(`Generated on ${formatDate(now)}`, pageWidth / 2, footerY + 5, { align: 'center' });
 
       // Save PDF
@@ -779,9 +819,6 @@ const Overtime = () => {
   const handleExportCurrentTable = async () => {
     try {
       setLoading(true);
-      
-      // Dynamically import jspdf-autotable to ensure it loads
-      await import('jspdf-autotable');
       
       // Use current table data (submittedOvertimes)
       const records = submittedOvertimes;
@@ -934,7 +971,6 @@ const Overtime = () => {
       doc.setTextColor(120, 120, 120);
       doc.setFont('helvetica', 'italic');
       doc.text('This is a computer-generated document. No signature required.', pageWidth / 2, footerY, { align: 'center' });
-      const now = new Date();
       doc.text(`Generated on ${formatDate(now)}`, pageWidth / 2, footerY + 5, { align: 'center' });
 
       // Save PDF
@@ -952,9 +988,6 @@ const Overtime = () => {
   const handleExport = async () => {
     try {
       setLoading(true);
-      
-      // Dynamically import jspdf-autotable to ensure it loads
-      await import('jspdf-autotable');
       
       // Fetch all overtime records for the current employee
       let overtimeSnapshot;
@@ -1128,7 +1161,6 @@ const Overtime = () => {
       doc.setTextColor(120, 120, 120);
       doc.setFont('helvetica', 'italic');
       doc.text('This is a computer-generated document. No signature required.', pageWidth / 2, footerY, { align: 'center' });
-      const now = new Date();
       doc.text(`Generated on ${formatDate(now)}`, pageWidth / 2, footerY + 5, { align: 'center' });
 
       // Save PDF
@@ -1162,15 +1194,53 @@ const Overtime = () => {
             </button>
           )}
           {canView && (
-            <button 
-              type="button"
-              className="btn-view-submitted" 
-              onClick={handleViewPastOvertime}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-            >
-              <Icon name="view" />
-              Past Overtime
-            </button>
+            <>
+              <button 
+                type="button"
+                className="btn-view-submitted" 
+                onClick={handleViewPastOvertime}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <Icon name="view" />
+                Past Overtime
+              </button>
+              {isAdminUser && submittedOvertimes.length > 0 && (
+                <button 
+                  type="button"
+                  className="btn-clear-all" 
+                  onClick={handleClearAllData}
+                  disabled={loading}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    background: '#ef4444', 
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '10px 20px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'background 0.2s',
+                    opacity: loading ? 0.6 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.background = '#dc2626';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.background = '#ef4444';
+                    }
+                  }}
+                >
+                  <Icon name="delete" />
+                  {loading ? 'Clearing...' : 'Clear All Data'}
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -1511,69 +1581,158 @@ const Overtime = () => {
                   <p>No past overtime records found</p>
                 </div>
               ) : (
-                <div className="staff-table-container">
-                  <table className="staff-table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>From Time</th>
-                        <th>To Time</th>
-                        <th>Hours</th>
-                        <th>Reason</th>
-                        <th>Status</th>
-                        <th>Reset Month</th>
-                        <th>Submitted At</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pastOvertimes.map((record) => (
-                        <tr key={record.id}>
-                          <td>
-                            {record.date 
-                              ? (() => {
-                                  const dateParts = record.date.split('-');
-                                  if (dateParts.length === 3) {
-                                    return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-                                  }
-                                  return record.date;
-                                })()
-                              : 'N/A'}
-                          </td>
-                          <td>{record.fromTime || 'N/A'}</td>
-                          <td>{record.toTime || 'N/A'}</td>
-                          <td>{record.hours?.toFixed(2) || '0.00'}</td>
-                          <td title={record.reason || ''}>
-                            {(record.reason || '').length > 50 
-                              ? (record.reason || '').substring(0, 50) + '...' 
-                              : record.reason || 'N/A'}
-                          </td>
-                          <td>
-                            {isAdminUser ? (
-                              <select
-                                value={record.status || 'pending'}
-                                onChange={(e) => handleStatusUpdate(record.id!, e.target.value)}
-                                className={`status-select ${record.status || 'pending'}`}
-                                style={{ minWidth: '120px' }}
-                              >
-                                <option value="pending">Pending</option>
-                                <option value="approved">Approved</option>
-                                <option value="rejected">Rejected</option>
-                                <option value="paid">Paid</option>
-                              </select>
-                            ) : (
-                              <span className={`status-badge ${record.status || 'pending'}`}>
-                                {record.status || 'pending'}
-                              </span>
-                            )}
-                          </td>
-                          <td>{record.resetMonth || 'N/A'}</td>
-                          <td>
-                            {formatDate(record.submittedAt || record.createdAt)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div>
+                  {(() => {
+                    // Group records by resetMonth
+                    const groupedByMonth = pastOvertimes.reduce((acc, record) => {
+                      const month = record.resetMonth || 'Unknown Month';
+                      if (!acc[month]) {
+                        acc[month] = [];
+                      }
+                      acc[month].push(record);
+                      return acc;
+                    }, {} as Record<string, SubmittedOvertime[]>);
+
+                    const months = Object.keys(groupedByMonth).sort((a, b) => {
+                      // Sort months in reverse order (newest first)
+                      return b.localeCompare(a);
+                    });
+
+                    return months.map((month, monthIndex) => {
+                      const monthRecords = groupedByMonth[month];
+                      const monthTotalHours = monthRecords.reduce((sum, r) => sum + (r.hours || 0), 0);
+
+                      return (
+                        <div key={month} style={{ marginBottom: monthIndex < months.length - 1 ? '40px' : '0' }}>
+                          <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <strong style={{ fontSize: '1.1rem', color: '#0369a1' }}>
+                                  {month}
+                                </strong>
+                              </div>
+                              <div style={{ fontSize: '1rem', color: '#0369a1', fontWeight: '600' }}>
+                                Total Hours: {monthTotalHours.toFixed(2)} | Records: {monthRecords.length}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="staff-table-container">
+                            <table className="staff-table">
+                              <thead>
+                                <tr>
+                                  <th>User Name</th>
+                                  <th>Date</th>
+                                  <th>From Time</th>
+                                  <th>To Time</th>
+                                  <th>Hours</th>
+                                  <th>Reason</th>
+                                  <th>Status</th>
+                                  <th>Submitted At</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(() => {
+                                  // Group records by user within the month
+                                  const groupedByUser = monthRecords.reduce((acc, record) => {
+                                    const key = record.employeeId || record.name || 'unknown';
+                                    if (!acc[key]) {
+                                      acc[key] = {
+                                        employeeId: record.employeeId || '',
+                                        employeeName: record.name || 'Unknown',
+                                        records: []
+                                      };
+                                    }
+                                    acc[key].records.push(record);
+                                    return acc;
+                                  }, {} as Record<string, { employeeId: string; employeeName: string; records: SubmittedOvertime[] }>);
+
+                                  const employeeGroups = Object.values(groupedByUser);
+                                  const rows: JSX.Element[] = [];
+
+                                  employeeGroups.forEach((group, groupIndex) => {
+                                    const userTotalHours = group.records.reduce((sum, r) => sum + (r.hours || 0), 0);
+
+                                    group.records.forEach((record, recordIndex) => {
+                                      rows.push(
+                                        <tr key={record.id}>
+                                          {recordIndex === 0 && (
+                                            <td rowSpan={group.records.length} style={{ verticalAlign: 'top', fontWeight: '600', background: '#f9fafb', borderRight: '2px solid #e5e7eb', padding: '12px' }}>
+                                              <div style={{ marginBottom: '4px' }}>{group.employeeName}</div>
+                                              {group.employeeId && (
+                                                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                                  ({group.employeeId})
+                                                </div>
+                                              )}
+                                            </td>
+                                          )}
+                                          <td>
+                                            {record.date 
+                                              ? (() => {
+                                                  const dateParts = record.date.split('-');
+                                                  if (dateParts.length === 3) {
+                                                    return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+                                                  }
+                                                  return record.date;
+                                                })()
+                                              : 'N/A'}
+                                          </td>
+                                          <td>{record.fromTime || 'N/A'}</td>
+                                          <td>{record.toTime || 'N/A'}</td>
+                                          <td>{record.hours?.toFixed(2) || '0.00'}</td>
+                                          <td title={record.reason || ''}>
+                                            {(record.reason || '').length > 50 
+                                              ? (record.reason || '').substring(0, 50) + '...' 
+                                              : record.reason || 'N/A'}
+                                          </td>
+                                          <td>
+                                            {isAdminUser ? (
+                                              <select
+                                                value={record.status || 'pending'}
+                                                onChange={(e) => handleStatusUpdate(record.id!, e.target.value)}
+                                                className={`status-select ${record.status || 'pending'}`}
+                                                style={{ minWidth: '120px' }}
+                                              >
+                                                <option value="pending">Pending</option>
+                                                <option value="approved">Approved</option>
+                                                <option value="rejected">Rejected</option>
+                                                <option value="paid">Paid</option>
+                                              </select>
+                                            ) : (
+                                              <span className={`status-badge ${record.status || 'pending'}`}>
+                                                {record.status || 'pending'}
+                                              </span>
+                                            )}
+                                          </td>
+                                          <td>
+                                            {formatDate(record.submittedAt || record.createdAt)}
+                                          </td>
+                                        </tr>
+                                      );
+                                    });
+
+                                    // Add total row for this user
+                                    rows.push(
+                                      <tr key={`total-${group.employeeId || groupIndex}`} style={{ background: '#eff6ff', fontWeight: '600' }}>
+                                        <td colSpan={4} style={{ textAlign: 'right', padding: '12px 16px', borderTop: '2px solid #bfdbfe' }}>
+                                          Total Hours for {group.employeeName}:
+                                        </td>
+                                        <td style={{ padding: '12px 16px', color: '#1e40af', borderTop: '2px solid #bfdbfe', fontSize: '1rem' }}>
+                                          {userTotalHours.toFixed(2)}
+                                        </td>
+                                        <td colSpan={3} style={{ borderTop: '2px solid #bfdbfe' }}></td>
+                                      </tr>
+                                    );
+                                  });
+
+                                  return rows;
+                                })()}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               )}
             </div>

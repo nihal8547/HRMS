@@ -1,0 +1,185 @@
+/* ============================================
+   Table Overrides - Apply to all existing tables
+   ============================================ */
+
+/* Staff Table */
+.staff-table-container,
+.staff-table-wrapper {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.staff-table thead {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  color: var(--color-white);
+}
+
+.staff-table thead th {
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+.staff-table tbody tr {
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color var(--transition-fast);
+}
+
+.staff-table tbody tr:hover {
+  background-color: var(--color-gray-50);
+}
+
+.staff-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.staff-table tbody td {
+  padding: 14px 16px;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
+  border-radius: var(--radius-full);
+  text-transform: capitalize;
+}
+
+.status-badge.pending {
+  background-color: var(--color-warning-light);
+  color: #92400e;
+}
+
+.status-badge.approved,
+.status-badge.active {
+  background-color: var(--color-success-light);
+  color: #065f46;
+}
+
+.status-badge.rejected,
+.status-badge.inactive {
+  background-color: var(--color-error-light);
+  color: #991b1b;
+}
+
+.status-badge.paid {
+  background-color: var(--color-success-light);
+  color: #065f46;
+}
+
+/* Action Icons */
+.action-icons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--text-tertiary);
+}
+
+.action-icon:hover {
+  background-color: var(--color-gray-100);
+  color: var(--text-primary);
+}
+
+.action-icon.edit {
+  color: var(--color-success);
+}
+
+.action-icon.edit:hover {
+  background-color: var(--color-success-light);
+  color: #059669;
+}
+
+.action-icon.delete {
+  color: var(--color-error);
+}
+
+.action-icon.delete:hover {
+  background-color: var(--color-error-light);
+  color: #dc2626;
+}
+
+.action-icon.download {
+  color: var(--color-primary);
+}
+
+.action-icon.download:hover {
+  background-color: var(--color-primary-lighter);
+  color: var(--color-primary-dark);
+}
+
+/* Search Input Standardization */
+.search-input,
+.search-wrapper input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--color-white);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.search-input:focus,
+.search-wrapper input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-lighter);
+}
+
+/* Filter Select Standardization */
+.filter-select,
+select {
+  padding: 10px 14px;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--color-white);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.filter-select:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-lighter);
+}
+

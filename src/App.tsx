@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Staffs from './pages/Staffs';
 import StaffCreate from './pages/Staffs/StaffCreate';
 import StaffManagement from './pages/Staffs/StaffManagement';
+import ModernStaffManagement from './pages/Staffs/ModernStaffManagement';
 import EmployeeProfileView from './pages/Staffs/EmployeeProfileView';
 import Leave from './pages/Leave';
 import LeaveRequest from './pages/Leave/LeaveRequest';
@@ -68,7 +69,7 @@ function App() {
               path="/staffs/management"
               element={
                 <PermissionRoute pageName="Staffs">
-                  <StaffManagement />
+                  <ModernStaffManagement />
                 </PermissionRoute>
               }
             />

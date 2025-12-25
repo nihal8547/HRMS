@@ -72,7 +72,7 @@ const Staffs = () => {
           await fetchStaffs(user.uid, role, permissions);
           }
         } catch (error) {
-          console.error('Error fetching role permissions:', error);
+          // Error handled - default to edit permission
           setCanEdit(true); // Default to true on error
           if (isMounted) {
           await fetchStaffs(user.uid, role, []);
