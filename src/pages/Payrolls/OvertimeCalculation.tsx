@@ -4,6 +4,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../firebase/config';
 import { fetchUserRole, isAdmin } from '../../utils/userRole';
+import { fetchAllEmployees } from '../../utils/fetchEmployees';
 import Icon from '../../components/Icons';
 import '../Staffs/StaffManagement.css';
 
@@ -58,7 +59,6 @@ const OvertimeCalculation = () => {
       let overtimeSnapshot;
       
       // Import fetchAllEmployees once at the top of the function
-      const { fetchAllEmployees } = await import('../../utils/fetchEmployees');
       const allEmployees = await fetchAllEmployees();
       
       if (adminUser) {

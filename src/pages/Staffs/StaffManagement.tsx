@@ -46,7 +46,6 @@ const StaffManagement = () => {
       
       if (adminUser) {
         // Admin can see all staffs
-        const { fetchAllEmployees } = await import('../../utils/fetchEmployees');
         const employees = await fetchAllEmployees();
         // Map to Staff interface format
         const staffsData = employees.map(emp => ({
@@ -62,7 +61,6 @@ const StaffManagement = () => {
         setStaffs(staffsData);
       } else {
         // Non-admin users can only see their own profile
-        const { fetchAllEmployees } = await import('../../utils/fetchEmployees');
         const employees = await fetchAllEmployees();
         // Filter to show only current user's data
         const userEmployee = employees.find(emp => 

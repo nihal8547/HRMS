@@ -5,6 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../firebase/config';
 import { fetchUserRole, isAdmin, canEditPageSync } from '../../utils/userRole';
 import type { PermissionLevel } from '../../utils/userRole';
+import { fetchAllEmployees } from '../../utils/fetchEmployees';
 import { usePagePermissions } from '../../hooks/usePagePermissions';
 import Icon from '../../components/Icons';
 import '../Staffs/StaffManagement.css';
@@ -103,7 +104,6 @@ const Requests = () => {
         ));
       } else {
         // No access or only own data
-        const { fetchAllEmployees } = await import('../../utils/fetchEmployees');
         const employees = await fetchAllEmployees();
         const userEmployee = employees.find(emp => 
           emp.id === uid || emp.authUserId === uid

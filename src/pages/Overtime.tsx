@@ -3,6 +3,7 @@ import { collection, addDoc, getDocs, doc, getDoc, query, where, updateDoc, dele
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase/config';
 import { fetchUserRole, isAdmin } from '../utils/userRole';
+import { fetchAllEmployees } from '../utils/fetchEmployees';
 import { usePagePermissions } from '../hooks/usePagePermissions';
 import Icon from '../components/Icons';
 import jsPDF from 'jspdf';
@@ -82,7 +83,6 @@ const Overtime = () => {
         overtimeSnapshot = await getDocs(collection(db, 'overtime'));
       } else {
         // Non-admin users can only see their own records
-        const { fetchAllEmployees } = await import('../utils/fetchEmployees');
         const employees = await fetchAllEmployees();
         const currentUser = auth.currentUser;
         const userEmployee = employees.find(emp => 
@@ -134,7 +134,6 @@ const Overtime = () => {
         overtimeSnapshot = await getDocs(collection(db, 'overtime'));
       } else {
         // Non-admin users can only see their own records
-        const { fetchAllEmployees } = await import('../utils/fetchEmployees');
         const employees = await fetchAllEmployees();
         const currentUser = auth.currentUser;
         const userEmployee = employees.find(emp => 
@@ -251,7 +250,6 @@ const Overtime = () => {
 
   const fetchStaffs = async () => {
     try {
-      const { fetchAllEmployees } = await import('../utils/fetchEmployees');
       const employees = await fetchAllEmployees();
       setStaffs(employees);
     } catch (error) {
@@ -918,7 +916,6 @@ const Overtime = () => {
       if (isAdminUser) {
         overtimeSnapshot = await getDocs(collection(db, 'overtime'));
       } else {
-        const { fetchAllEmployees } = await import('../utils/fetchEmployees');
         const employees = await fetchAllEmployees();
         const userEmployee = employees.find(emp => 
           emp.id === currentUserId || emp.authUserId === currentUserId

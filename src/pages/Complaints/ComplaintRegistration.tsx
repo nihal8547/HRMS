@@ -4,6 +4,7 @@ import { collection, addDoc, getDocs, doc, getDoc, query, where } from 'firebase
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../firebase/config';
 import { fetchUserRole, isAdmin } from '../../utils/userRole';
+import { fetchAllEmployees } from '../../utils/fetchEmployees';
 import Icon from '../../components/Icons';
 import '../Staffs/StaffCreate.css';
 
@@ -88,7 +89,6 @@ const ComplaintRegistration = () => {
 
   const fetchStaffs = async () => {
     try {
-      const { fetchAllEmployees } = await import('../../utils/fetchEmployees');
       const employees = await fetchAllEmployees();
       setStaffs(employees);
     } catch (error) {

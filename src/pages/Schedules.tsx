@@ -3,6 +3,7 @@ import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, where } 
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase/config';
 import { fetchUserRole, isAdmin } from '../utils/userRole';
+import { fetchAllEmployees } from '../utils/fetchEmployees';
 import Icon from '../components/Icons';
 import './Staffs/StaffManagement.css';
 
@@ -53,7 +54,6 @@ const Schedules = () => {
 
   const fetchStaffs = async () => {
     try {
-      const { fetchAllEmployees } = await import('../utils/fetchEmployees');
       const employees = await fetchAllEmployees();
       setStaffs(employees);
     } catch (error) {
@@ -67,7 +67,6 @@ const Schedules = () => {
       let snapshot;
       
       // Import fetchAllEmployees once at the top of the function
-      const { fetchAllEmployees } = await import('../utils/fetchEmployees');
       const allEmployees = await fetchAllEmployees();
       
       if (adminUser) {

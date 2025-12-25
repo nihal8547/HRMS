@@ -3,6 +3,7 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where } 
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../firebase/config';
 import { fetchUserRole, isAdmin } from '../../utils/userRole';
+import { fetchAllEmployees } from '../../utils/fetchEmployees';
 import * as XLSX from 'xlsx';
 import Icon from '../../components/Icons';
 import '../Staffs/StaffManagement.css';
@@ -109,7 +110,6 @@ const PayrollManagement = () => {
 
   const fetchEmployees = async () => {
     try {
-      const { fetchAllEmployees } = await import('../../utils/fetchEmployees');
       const allEmployees = await fetchAllEmployees();
       setEmployees(allEmployees);
     } catch (error) {
@@ -126,7 +126,6 @@ const PayrollManagement = () => {
       if (adminUser) {
         snapshot = await getDocs(collection(db, 'payrolls'));
       } else {
-        const { fetchAllEmployees } = await import('../../utils/fetchEmployees');
         const allEmployees = await fetchAllEmployees();
         const userEmployee = allEmployees.find(emp => 
           emp.id === uid || emp.authUserId === uid

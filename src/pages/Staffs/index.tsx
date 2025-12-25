@@ -5,6 +5,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../../firebase/config';
 import { fetchUserRole, isAdmin, canEditPageSync } from '../../utils/userRole';
 import type { PermissionLevel } from '../../utils/userRole';
+import { fetchAllEmployees } from '../../utils/fetchEmployees';
 import { deleteUserData, deleteUserDataByEmployeeId } from '../../utils/deleteUserData';
 import Icon from '../../components/Icons';
 import './StaffManagement.css';
@@ -102,7 +103,6 @@ const Staffs = () => {
       
       if (adminUser || permission === 'edit' || permission === 'view') {
         // Admin, edit, or view users can see all staffs (view users see all data including admin updates)
-        const { fetchAllEmployees } = await import('../../utils/fetchEmployees');
         const employees = await fetchAllEmployees();
         
         // Map to Staff interface format and deduplicate by both id and employeeId

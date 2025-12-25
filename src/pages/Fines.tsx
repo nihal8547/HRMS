@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db, storage } from '../firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { fetchUserRole, isAdmin } from '../utils/userRole';
+import { fetchAllEmployees } from '../utils/fetchEmployees';
 import Icon from '../components/Icons';
 import './Staffs/StaffManagement.css';
 import './Fines.css';
@@ -72,7 +73,6 @@ const Fines = () => {
         return;
       }
 
-      const { fetchAllEmployees } = await import('../utils/fetchEmployees');
       const allEmployees = await fetchAllEmployees();
       const userEmployee = allEmployees.find(emp => 
         emp.id === uid || emp.authUserId === uid
@@ -85,7 +85,6 @@ const Fines = () => {
 
   const fetchEmployees = async () => {
     try {
-      const { fetchAllEmployees } = await import('../utils/fetchEmployees');
       const allEmployees = await fetchAllEmployees();
       setEmployees(allEmployees);
     } catch (error) {
@@ -101,7 +100,6 @@ const Fines = () => {
       if (isAdmin(role)) {
         snapshot = await getDocs(query(collection(db, 'fines'), orderBy('createdAt', 'desc')));
       } else {
-        const { fetchAllEmployees } = await import('../utils/fetchEmployees');
         const allEmployees = await fetchAllEmployees();
         const userEmployee = allEmployees.find(emp => 
           emp.id === uid || emp.authUserId === uid
@@ -202,7 +200,6 @@ const Fines = () => {
       }
 
       // Get current user name
-      const { fetchAllEmployees } = await import('../utils/fetchEmployees');
       const allEmployees = await fetchAllEmployees();
       const currentUserEmp = allEmployees.find(emp => 
         emp.id === currentUserId || emp.authUserId === currentUserId

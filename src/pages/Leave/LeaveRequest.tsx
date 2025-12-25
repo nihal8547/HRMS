@@ -5,6 +5,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db, storage } from '../../firebase/config';
 import { fetchUserRole, isAdmin } from '../../utils/userRole';
+import { fetchAllEmployees } from '../../utils/fetchEmployees';
 import Icon from '../../components/Icons';
 import '../Staffs/StaffCreate.css';
 
@@ -91,7 +92,6 @@ const LeaveRequest = () => {
 
   const fetchStaffs = async () => {
     try {
-      const { fetchAllEmployees } = await import('../../utils/fetchEmployees');
       const employees = await fetchAllEmployees();
       setStaffs(employees);
     } catch (error) {
