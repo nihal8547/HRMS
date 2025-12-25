@@ -28,6 +28,7 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Documents from './pages/Documents';
 import Birthday from './pages/Templates/Birthday';
+import Fines from './pages/Fines';
 
 function App() {
   return (
@@ -151,6 +152,15 @@ function App() {
               element={
                 <PermissionRoute pageName="Complaints">
                   <ComplaintResolving />
+                </PermissionRoute>
+              }
+            />
+            {/* Fines */}
+            <Route
+              path="/fines"
+              element={
+                <PermissionRoute pageName="Fines">
+                  <Fines />
                 </PermissionRoute>
               }
             />

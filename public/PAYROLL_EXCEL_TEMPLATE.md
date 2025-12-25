@@ -47,4 +47,7 @@ When uploading payroll data via Excel, ensure your file follows this format:
 
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 414ddb490a202f32e9848d52f3c90863d8c4fe1e

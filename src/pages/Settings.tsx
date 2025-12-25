@@ -70,6 +70,7 @@ const Settings = () => {
     { pageName: 'Leave', enabled: true, description: 'Leave request and management', path: '/leave', icon: 'calendar' },
     { pageName: 'Requests', enabled: true, description: 'Item purchasing and using requests', path: '/requests', icon: 'file-text' },
     { pageName: 'Complaints', enabled: true, description: 'Complaint registration and resolving', path: '/complaints', icon: 'alert-circle' },
+    { pageName: 'Fines', enabled: true, description: 'Fine management and tracking', path: '/fines', icon: 'alert-triangle' },
     { pageName: 'Payrolls', enabled: true, description: 'Payroll settings and calculations', path: '/payrolls', icon: 'dollar-sign' },
     { pageName: 'Overtime', enabled: true, description: 'Overtime submission', path: '/overtime', icon: 'clock' },
     { pageName: 'Schedules', enabled: true, description: 'Duty time scheduling', path: '/schedules', icon: 'clock' },

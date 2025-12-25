@@ -18,4 +18,7 @@ If the logo file is not found, the PDF will still generate without it.
 
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 414ddb490a202f32e9848d52f3c90863d8c4fe1e

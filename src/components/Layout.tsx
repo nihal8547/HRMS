@@ -62,6 +62,7 @@ const Layout = () => {
         { path: '/leave', label: 'Leave', icon: 'calendar', pageName: 'Leave' },
         { path: '/requests', label: 'Requests', icon: 'file-text', pageName: 'Requests' },
         { path: '/complaints', label: 'Complaints', icon: 'alert-circle', pageName: 'Complaints' },
+        { path: '/fines', label: 'Fines', icon: 'alert-triangle', pageName: 'Fines' },
         { path: '/schedules', label: 'Schedules', icon: 'clock', pageName: 'Schedules' }
       ]
     },

@@ -62,6 +62,13 @@ const Icon = ({ name, className = '' }: IconProps) => {
         <circle cx="10" cy="13.3333" r="0.833333" fill="currentColor"/>
       </svg>
     ),
+    'alert-triangle': (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 3.33333L2.5 16.6667H17.5L10 3.33333Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <path d="M10 8.33333V11.6667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <circle cx="10" cy="14.1667" r="0.833333" fill="currentColor"/>
+      </svg>
+    ),
     clock: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
