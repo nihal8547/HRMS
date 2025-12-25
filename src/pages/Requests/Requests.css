@@ -1,0 +1,245 @@
+/* Requests Management Page Styles */
+
+.requests-management {
+  padding: 0;
+}
+
+.requests-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.requests-header h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.requests-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.requests-actions .btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+}
+
+.requests-actions .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  .requests-management {
+    padding: 0;
+    padding-bottom: 120px !important; /* Extra space to ensure table is not hidden under bottom nav */
+    margin-bottom: 0;
+  }
+
+  /* Requests page - ensure table container has enough bottom space */
+  .requests-management .staff-table-container {
+    margin-bottom: 30px;
+  }
+
+  .requests-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .requests-header h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0;
+  }
+
+  .requests-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .requests-actions .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 20px;
+    font-size: 1rem;
+  }
+
+  /* Management header improvements for mobile */
+  .management-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .management-header .search-wrapper {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .management-header .filter-select {
+    width: 100%;
+  }
+
+  /* Table container - ensure horizontal scroll and bottom spacing */
+  .staff-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+    margin-bottom: 40px !important; /* Extra margin to prevent hiding under footer */
+    padding: 0;
+    padding-bottom: 15px;
+    border-radius: 12px;
+  }
+
+  /* Requests management page container - extra bottom spacing */
+  .requests-management.staff-management {
+    padding-bottom: 100px !important;
+    margin-bottom: 30px;
+  }
+
+  .staff-table {
+    min-width: 900px;
+    display: table;
+  }
+
+  /* Table cells - better text wrapping on mobile */
+  .staff-table th,
+  .staff-table td {
+    padding: 12px 8px !important;
+    font-size: 0.85rem;
+  }
+
+  /* Make certain columns more compact on mobile */
+  .staff-table th:nth-child(1),
+  .staff-table td:nth-child(1) {
+    min-width: 100px;
+  }
+
+  .staff-table th:nth-child(2),
+  .staff-table td:nth-child(2) {
+    min-width: 120px;
+  }
+
+  .staff-table th:nth-child(3),
+  .staff-table td:nth-child(3) {
+    min-width: 90px;
+  }
+
+  .staff-table th:nth-child(4),
+  .staff-table td:nth-child(4) {
+    min-width: 120px;
+  }
+
+  .staff-table th:nth-child(5),
+  .staff-table td:nth-child(5) {
+    min-width: 100px;
+  }
+
+  .staff-table th:nth-child(6),
+  .staff-table td:nth-child(6) {
+    min-width: 80px;
+  }
+
+  .staff-table th:nth-child(7),
+  .staff-table td:nth-child(7) {
+    min-width: 100px;
+  }
+
+  .staff-table th:nth-child(8),
+  .staff-table td:nth-child(8) {
+    min-width: 100px;
+  }
+
+  /* Priority and status badges - better sizing */
+  .priority-badge,
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    white-space: nowrap;
+  }
+
+  /* Action icons - better spacing */
+  .action-icons {
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .action-icon {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 6px;
+  }
+
+  /* Status select dropdown */
+  .status-select {
+    padding: 8px 28px 8px 10px;
+    font-size: 0.85rem;
+    min-height: 40px;
+  }
+
+  /* No data message */
+  .no-data {
+    padding: 24px 12px !important;
+    font-size: 0.9rem;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  .requests-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .staff-table th,
+  .staff-table td {
+    padding: 10px 6px !important;
+    font-size: 0.8rem;
+  }
+
+  .staff-table {
+    min-width: 750px;
+  }
+
+  .action-icon {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px;
+  }
+
+  .action-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .priority-badge,
+  .status-badge {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+
+  .status-select {
+    padding: 6px 24px 6px 8px;
+    font-size: 0.8rem;
+    min-height: 36px;
+  }
+}
+
+
