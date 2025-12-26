@@ -5,6 +5,7 @@ import { auth, db } from '../firebase/config';
 import { fetchUserRole, isAdmin } from '../utils/userRole';
 import { fetchAllEmployees } from '../utils/fetchEmployees';
 import Icon from '../components/Icons';
+import Loading from '../components/Loading';
 import './Staffs/StaffManagement.css';
 
 interface Schedule {
@@ -36,6 +37,8 @@ const Schedules = () => {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('');
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
+  const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -115,6 +118,25 @@ const Schedules = () => {
       [e.target.name]: e.target.value
     });
   };
+
+  const handleEmployeeSelect = (employeeId: string, employeeName: string) => {
+    setFormData({
+      ...formData,
+      employeeId: employeeId
+    });
+    setEmployeeSearchTerm(`${employeeId} - ${employeeName}`);
+    setShowEmployeeDropdown(false);
+  };
+
+  const filteredEmployees = staffs.filter(staff => {
+    const searchLower = employeeSearchTerm.toLowerCase();
+    const employeeId = (staff.employeeId || '').toLowerCase();
+    const name = (staff.name || staff.fullName || '').toLowerCase();
+    const department = (staff.department || '').toLowerCase();
+    return employeeId.includes(searchLower) || 
+           name.includes(searchLower) || 
+           department.includes(searchLower);
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -232,10 +254,7 @@ const Schedules = () => {
             </button>
           )}
         </div>
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p className="loading-text">Loading schedules...</p>
-        </div>
+        <Loading fullPage message="Loading schedules..." />
       </div>
     );
   }
@@ -248,21 +267,106 @@ const Schedules = () => {
         <div className="staff-table-container" style={{ marginBottom: '20px' }}>
           <form onSubmit={handleSubmit} style={{ padding: '20px' }}>
             <div className="form-row">
-              <div className="form-group">
-                <label>Employee ID *</label>
-                <select
-                  name="employeeId"
-                  value={formData.employeeId}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select Employee</option>
-                  {staffs.map(staff => (
-                    <option key={staff.id} value={staff.employeeId}>
-                      {staff.employeeId} - {staff.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="form-group" style={{ position: 'relative' }}>
+                <label>Select Employee or Search *</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    placeholder="Search by Employee ID, Name, or Department..."
+                    value={employeeSearchTerm}
+                    onChange={(e) => {
+                      setEmployeeSearchTerm(e.target.value);
+                      setShowEmployeeDropdown(true);
+                      if (!e.target.value) {
+                        setFormData({ ...formData, employeeId: '' });
+                      }
+                    }}
+                    onFocus={() => setShowEmployeeDropdown(true)}
+                    onBlur={() => {
+                      // Delay to allow click on dropdown items
+                      setTimeout(() => setShowEmployeeDropdown(false), 200);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontSize: '14px'
+                    }}
+                    required={!formData.employeeId}
+                  />
+                  {showEmployeeDropdown && employeeSearchTerm && filteredEmployees.length > 0 && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        zIndex: 1000,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        marginTop: '4px'
+                      }}
+                    >
+                      {filteredEmployees.map(staff => (
+                        <div
+                          key={staff.id}
+                          onClick={() => handleEmployeeSelect(staff.employeeId, staff.name || staff.fullName || '')}
+                          style={{
+                            padding: '10px 12px',
+                            cursor: 'pointer',
+                            borderBottom: '1px solid #f0f0f0',
+                            transition: 'background-color 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f5f5f5';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'white';
+                          }}
+                        >
+                          <div style={{ fontWeight: '600', color: '#1f2937' }}>
+                            {staff.employeeId} - {staff.name || staff.fullName || 'Unknown'}
+                          </div>
+                          {staff.department && (
+                            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
+                              {staff.department}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {showEmployeeDropdown && employeeSearchTerm && filteredEmployees.length === 0 && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        backgroundColor: 'white',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        padding: '12px',
+                        zIndex: 1000,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        marginTop: '4px',
+                        color: '#6b7280'
+                      }}
+                    >
+                      No employees found
+                    </div>
+                  )}
+                </div>
+                {formData.employeeId && (
+                  <div style={{ marginTop: '8px', fontSize: '12px', color: '#059669' }}>
+                    ✓ Selected: {staffs.find(s => s.employeeId === formData.employeeId)?.name || formData.employeeId}
+                  </div>
+                )}
               </div>
               <div className="form-group">
                 <label>Date *</label>

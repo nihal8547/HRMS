@@ -6,9 +6,11 @@ import { fetchUserRole, isAdmin } from '../utils/userRole';
 import { fetchAllEmployees } from '../utils/fetchEmployees';
 import { usePagePermissions } from '../hooks/usePagePermissions';
 import Icon from '../components/Icons';
+import Loading from '../components/Loading';
 import jsPDF from 'jspdf';
-// Extend jsPDF with autoTable
-import 'jspdf-autotable';
+// Import autoTable as a function (v5+ API)
+// jspdf-autotable v5 exports autoTable as a named export
+import { autoTable } from 'jspdf-autotable';
 import './Staffs/StaffCreate.css';
 import './Staffs/StaffManagement.css';
 import './Overtime.css';
@@ -686,132 +688,663 @@ const Overtime = () => {
     });
   };
 
-  const handleExportSingleRecord = async (record: SubmittedOvertime) => {
+  /**
+   * Professional Overtime PDF Export Function
+   * Generates a clean, professional A4 PDF document for overtime reports
+   * 
+   * @param records - Array of overtime records to include in the PDF
+   * @param employeeData - Employee information (name, employeeId, department)
+   * @param monthYear - Month and year for the report (e.g., "January 2024")
+   * @param fileName - Optional custom file name, otherwise auto-generated
+   */
+  const exportOvertimeToPDF = async (
+    records: SubmittedOvertime[],
+    employeeData: { name: string; employeeId: string; department?: string },
+    monthYear?: string,
+    fileName?: string
+  ): Promise<void> => {
     try {
-      setLoading(true);
-      
-      // Create PDF for single record
-      const doc = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      let yPos = 20;
+      // Validate inputs
+      if (!records || records.length === 0) {
+        throw new Error('No overtime records to export');
+      }
 
-      // Try to load and add logo
+      if (!employeeData || !employeeData.name || !employeeData.employeeId) {
+        throw new Error('Employee data is required');
+      }
+
+      // Initialize PDF document (A4 size, portrait orientation)
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth(); // 210mm for A4
+      const pageHeight = doc.internal.pageSize.getHeight(); // 297mm for A4
+      const margin = 15; // 15mm margins on all sides
+      let yPos = margin; // Start position
+
+      // ============================================
+      // SECTION 1: HEADER WITH LOGO AND TITLE
+      // ============================================
+      
+      // Try to load and add company logo (top-right)
       try {
         const logoBase64 = await loadLogoAsBase64();
         if (logoBase64) {
-          doc.addImage(logoBase64, 'PNG', 20, yPos, 50, 15);
+          // Logo positioned at top-right, fixed size: 40mm width, auto height
+          const logoWidth = 40;
+          const logoHeight = 15;
+          const logoX = pageWidth - margin - logoWidth; // Right-aligned with margin
+          const logoY = margin;
+          doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
         }
       } catch (error) {
         console.log('Logo not found, continuing without logo');
       }
 
-      // Company Header
-      doc.setFontSize(20);
-      doc.setTextColor(0, 102, 153);
+      // "OVERTIME REPORT" heading (left side, bold)
+      doc.setFontSize(24);
       doc.setFont('helvetica', 'bold');
-      doc.text('FOCUS MEDICAL CENTRE', pageWidth / 2, yPos + 10, { align: 'center' });
+      doc.setTextColor(0, 0, 0); // Black
+      doc.text('OVERTIME REPORT', margin, yPos + 12);
+
+      // Move down after header
+      yPos = 35;
+
+      // ============================================
+      // SECTION 2: EMPLOYEE DETAILS (TWO COLUMNS)
+      // ============================================
       
-      doc.setFontSize(12);
-      doc.setTextColor(0, 150, 200);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text('فوكاس ميديكال سنتر', pageWidth / 2, yPos + 16, { align: 'center' });
+      doc.setTextColor(60, 60, 60); // Dark gray
 
-      yPos = 40;
+      // Left column (starting at margin)
+      const leftColX = margin;
+      const rightColX = pageWidth / 2 + 10; // Start of right column
+      const lineHeight = 7; // Space between lines
 
-      // Report Title
-      doc.setFontSize(16);
-      doc.setTextColor(0, 0, 0);
+      // Employee Name
       doc.setFont('helvetica', 'bold');
-      doc.text('OVERTIME RECORD', pageWidth / 2, yPos, { align: 'center' });
+      doc.text('Employee Name:', leftColX, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(employeeData.name || 'N/A', leftColX + 35, yPos);
 
-      yPos += 20;
+      // Employee Code / ID
+      yPos += lineHeight;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Employee Code:', leftColX, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(employeeData.employeeId || 'N/A', leftColX + 35, yPos);
 
-      // Employee Information
+      // Department (right column)
+      yPos = 35; // Reset to top for right column
+      doc.setFont('helvetica', 'bold');
+      doc.text('Department:', rightColX, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(employeeData.department || 'N/A', rightColX + 30, yPos);
+
+      // Month & Year of Overtime (right column, second line)
+      yPos += lineHeight;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Month & Year:', rightColX, yPos);
+      doc.setFont('helvetica', 'normal');
+      
+      // Determine month/year from records or use provided value
+      let reportMonthYear = monthYear || '';
+      if (!reportMonthYear && records.length > 0) {
+        const firstDate = records[0].date;
+        if (firstDate) {
+          const dateParts = firstDate.split('-');
+          if (dateParts.length === 3) {
+            const date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+            if (!isNaN(date.getTime())) {
+              reportMonthYear = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            }
+          }
+        }
+      }
+      if (!reportMonthYear) {
+        reportMonthYear = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      }
+      doc.text(reportMonthYear, rightColX + 30, yPos);
+
+      // Move down after employee details
+      yPos = 55;
+
+      // ============================================
+      // SECTION 3: OVERTIME DETAILS TABLE
+      // ============================================
+      
+      // Prepare table data
+      const tableData = records.map((record, index) => {
+        // Format date to dd/MM/yyyy
+        let formattedDate = 'N/A';
+        if (record.date) {
+          const dateParts = record.date.split('-');
+          if (dateParts.length === 3) {
+            formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+          } else {
+            formattedDate = record.date;
+          }
+        }
+
+        // Format status (capitalize first letter)
+        const status = record.status || 'pending';
+        const formattedStatus = status.charAt(0).toUpperCase() + status.slice(1);
+
+        return [
+          (index + 1).toString(), // Sl. No
+          formattedDate, // Date
+          record.fromTime || 'N/A', // From Time
+          record.toTime || 'N/A', // To Time
+          (record.hours || 0).toFixed(2), // Total Hours
+          record.reason || 'N/A', // Reason (will auto-wrap)
+          formattedStatus // Status
+        ];
+      });
+
+      // Table columns
+      const tableColumns = [
+        'Sl. No',
+        'Date',
+        'From Time',
+        'To Time',
+        'Total Hours',
+        'Reason',
+        'Status'
+      ];
+
+      // Calculate total hours
+      const totalHours = records.reduce((sum, record) => sum + (record.hours || 0), 0);
+
+      // Add table using autoTable (v5+ API - function call, not prototype method)
+      if (!autoTable || typeof autoTable !== 'function') {
+        throw new Error('autoTable function is not available. Please ensure jspdf-autotable is properly installed.');
+      }
+
+      autoTable(doc, {
+        head: [tableColumns],
+        body: tableData,
+        startY: yPos,
+        margin: { left: margin, right: margin, top: 5, bottom: 5 },
+        styles: {
+          fontSize: 9,
+          cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+          textColor: [0, 0, 0],
+          font: 'helvetica',
+          fontStyle: 'normal',
+          lineColor: [0, 0, 0], // Black borders
+          lineWidth: 0.1, // Standard border width
+          fillColor: [255, 255, 255], // White background
+          halign: 'left',
+          valign: 'middle'
+        },
+        headStyles: {
+          fillColor: [41, 128, 185], // Blue header background
+          textColor: [255, 255, 255], // White text
+          fontStyle: 'bold',
+          fontSize: 10,
+          halign: 'center',
+          valign: 'middle',
+          cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
+          lineColor: [0, 0, 0],
+          lineWidth: 0.2 // Thicker borders for header
+        },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 15, cellPadding: { top: 5, bottom: 5, left: 3, right: 3 } }, // Sl. No
+          1: { halign: 'center', cellWidth: 25, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }, // Date
+          2: { halign: 'center', cellWidth: 25, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }, // From Time
+          3: { halign: 'center', cellWidth: 25, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }, // To Time
+          4: { halign: 'center', cellWidth: 25, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }, // Total Hours
+          5: { halign: 'left', cellWidth: 'auto', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }, // Reason
+          6: { halign: 'center', cellWidth: 25, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } } // Status
+        },
+        alternateRowStyles: {
+          fillColor: [250, 250, 250], // Very light gray for alternate rows
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1
+        },
+        bodyStyles: {
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1
+        },
+        // Wrap long text in Reason column
+        didParseCell: (data: any) => {
+          if (data.column.index === 5 && data.cell.text) {
+            const text = Array.isArray(data.cell.text) ? data.cell.text[0] : data.cell.text;
+            if (typeof text === 'string' && text.length > 30) {
+              data.cell.text = (doc as any).splitTextToSize(text, 50);
+            }
+          }
+        }
+      });
+
+      // Get the final Y position after table
+      // In v5+, lastAutoTable is still available on the doc object
+      const finalY = (doc as any).lastAutoTable?.finalY || yPos + 50;
+      yPos = finalY + 15; // Add spacing after table
+
+      // Add total hours row below table
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
-      doc.text('Employee Information', 20, yPos);
-      
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(60, 60, 60);
-      yPos += 10;
-      doc.text(`Employee ID: ${record.employeeId || 'N/A'}`, 20, yPos);
-      yPos += 7;
-      doc.text(`Employee Name: ${record.name || 'N/A'}`, 20, yPos);
-
-      // Report Date
-      const now = new Date();
-      const reportDate = formatDate(now);
-      doc.text(`Report Generated: ${reportDate}`, pageWidth - 20, yPos - 17, { align: 'right' });
-
+      doc.text(`Total Hours: ${totalHours.toFixed(2)}`, pageWidth - margin, yPos, { align: 'right' });
       yPos += 20;
 
-      // Overtime Details
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 0, 0);
-      doc.text('Overtime Details', 20, yPos);
+      // ============================================
+      // SECTION 4: SIGNATURE SECTION (BOTTOM)
+      // ============================================
       
-      yPos += 10;
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(60, 60, 60);
+      // Ensure signatures are on the same page or add new page if needed
+      if (yPos > pageHeight - 60) {
+        doc.addPage();
+        yPos = margin;
+      }
+
+      // Signature section Y position (near bottom with margin)
+      const signatureY = pageHeight - 50;
       
-      const details = [
-        ['Date:', record.date 
-          ? (() => {
-              const dateParts = record.date.split('-');
-              if (dateParts.length === 3) {
-                return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-              }
-              return record.date;
-            })()
-          : 'N/A'],
-        ['From Time:', record.fromTime || 'N/A'],
-        ['To Time:', record.toTime || 'N/A'],
-        ['Total Hours:', (record.hours || 0).toFixed(2)],
-        ['Status:', (record.status || 'pending').toUpperCase()],
-        ['Submitted At:', formatDate(record.submittedAt || record.createdAt)]
-      ];
-
-      details.forEach(([label, value]) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(label, 20, yPos);
-        doc.setFont('helvetica', 'normal');
-        const textWidth = doc.getTextWidth(value);
-        doc.text(value, pageWidth - 20 - textWidth, yPos, { align: 'right' });
-        yPos += 8;
-      });
-
-      yPos += 10;
-
-      // Reason
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 0, 0);
-      doc.text('Reason:', 20, yPos);
-      yPos += 8;
+      // Left side: Employee Signature
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(60, 60, 60);
-      const reasonText = record.reason || 'N/A';
-      const splitReason = doc.splitTextToSize(reasonText, pageWidth - 40);
-      doc.text(splitReason, 20, yPos);
-      yPos += splitReason.length * 5 + 15;
+      doc.setTextColor(0, 0, 0);
+      
+      // Signature line
+      doc.line(margin, signatureY, margin + 60, signatureY);
+      doc.text('Employee Signature', margin, signatureY + 8);
 
-      // Footer
-      const footerY = pageHeight - 20;
-      doc.setFontSize(8);
-      doc.setTextColor(120, 120, 120);
+      // Right side: Department Head Signature
+      doc.line(pageWidth - margin - 60, signatureY, pageWidth - margin, signatureY);
+      doc.text('Department Head Signature', pageWidth - margin - 60, signatureY + 8);
+
+      // Date of PDF generation (centered at bottom)
+      const now = new Date();
+      let generatedDate = 'N/A';
+      try {
+        generatedDate = formatDate(now);
+      } catch (error) {
+        // Fallback date formatting
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        generatedDate = `${day}/${month}/${year}`;
+      }
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
       doc.setFont('helvetica', 'italic');
-      doc.text('This is a computer-generated document. No signature required.', pageWidth / 2, footerY, { align: 'center' });
-      doc.text(`Generated on ${formatDate(now)}`, pageWidth / 2, footerY + 5, { align: 'center' });
+      doc.text(`Generated on: ${generatedDate}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
 
-      // Save PDF
-      const fileName = `Overtime_${record.employeeId || 'Record'}_${record.date || new Date().toISOString().split('T')[0]}.pdf`;
+      // ============================================
+      // SECTION 5: SAVE PDF FILE
+      // ============================================
+      
+      // Generate file name if not provided
+      if (!fileName) {
+        const monthYearStr = reportMonthYear ? reportMonthYear.replace(/\s+/g, '-') : new Date().toISOString().split('T')[0];
+        fileName = `Overtime_Report_${employeeData.employeeId || 'EMP'}_${monthYearStr}.pdf`;
+      }
+
+      // Save the PDF
       doc.save(fileName);
       
+    } catch (error: any) {
+      console.error('Error generating PDF:', error);
+      const errorMessage = error?.message || 'Unknown error occurred';
+      throw new Error(`Failed to generate PDF: ${errorMessage}`);
+    }
+  };
+
+  const handleExportSingleRecord = async (record: SubmittedOvertime) => {
+    try {
+      setLoading(true);
+      
+      // Fetch employee department if available
+      let department = '';
+      try {
+        const employees = await fetchAllEmployees();
+        const employee = employees.find(emp => emp.employeeId === record.employeeId);
+        department = employee?.department || '';
+      } catch (error) {
+        console.log('Could not fetch department');
+      }
+
+      // Use the professional PDF export function
+      await exportOvertimeToPDF(
+        [record],
+        {
+          name: record.name || 'N/A',
+          employeeId: record.employeeId || 'N/A',
+          department: department
+        },
+        undefined, // Let function determine month/year from record
+        `Overtime_Report_${record.employeeId || 'Record'}_${record.date || new Date().toISOString().split('T')[0]}.pdf`
+      );
+      
       setLoading(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error exporting overtime record:', error);
-      alert('Error exporting record. Please try again.');
+      const errorMessage = error?.message || 'Unknown error occurred';
+      alert(`Error exporting record: ${errorMessage}. Please check the console for more details.`);
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Export comprehensive overtime report for all employees
+   * Creates a single PDF with overall summary and detailed employee sections
+   */
+  const exportAllEmployeesOvertimeReport = async (
+    allRecords: SubmittedOvertime[],
+    reportMonthYear?: string
+  ): Promise<void> => {
+    try {
+      if (!allRecords || allRecords.length === 0) {
+        throw new Error('No overtime records to export');
+      }
+
+      // Fetch all employees to get department information
+      const employees = await fetchAllEmployees();
+
+      // Group records by employee
+      const groupedByEmployee = allRecords.reduce((acc, record) => {
+        const key = record.employeeId || record.name || 'unknown';
+        if (!acc[key]) {
+          const emp = employees.find(e => e.employeeId === record.employeeId);
+          acc[key] = {
+            employeeId: record.employeeId || '',
+            name: record.name || 'Unknown',
+            department: emp?.department || '',
+            records: []
+          };
+        }
+        acc[key].records.push(record);
+        return acc;
+      }, {} as Record<string, { employeeId: string; name: string; department: string; records: SubmittedOvertime[] }>);
+
+      const employeeGroups = Object.values(groupedByEmployee);
+
+      // Determine report period
+      let reportPeriod = reportMonthYear || '';
+      if (!reportPeriod && allRecords.length > 0) {
+        const firstDate = allRecords[0].date;
+        if (firstDate) {
+          const dateParts = firstDate.split('-');
+          if (dateParts.length === 3) {
+            const date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+            reportPeriod = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+          }
+        }
+      }
+      if (!reportPeriod) {
+        reportPeriod = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      }
+
+      // Initialize PDF document
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      let yPos = margin;
+
+      // ============================================
+      // HEADER SECTION
+      // ============================================
+      
+      // Company Logo (top-right)
+      try {
+        const logoBase64 = await loadLogoAsBase64();
+        if (logoBase64) {
+          const logoWidth = 40;
+          const logoHeight = 15;
+          const logoX = pageWidth - margin - logoWidth;
+          doc.addImage(logoBase64, 'PNG', logoX, margin, logoWidth, logoHeight);
+        }
+      } catch (error) {
+        console.log('Logo not found');
+      }
+
+      // Report Title
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text('OVERTIME REQUEST REPORT - ALL EMPLOYEES', margin, yPos + 12);
+
+      // Report Period
+      yPos += 10;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Report Period: ${reportPeriod}`, margin, yPos);
+
+      yPos += 15;
+
+      // ============================================
+      // OVERALL SUMMARY SECTION
+      // ============================================
+      
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Overall Summary', margin, yPos);
+
+      yPos += 8;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+
+      const totalEmployees = employeeGroups.length;
+      const totalRequests = allRecords.length;
+      const totalHours = allRecords.reduce((sum, r) => sum + (r.hours || 0), 0);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total Employees:', margin, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(totalEmployees.toString(), margin + 45, yPos);
+
+      yPos += 7;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total Requests:', margin, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(totalRequests.toString(), margin + 45, yPos);
+
+      yPos += 7;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total Hours:', margin, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`${totalHours.toFixed(2)} hours`, margin + 45, yPos);
+
+      yPos += 15;
+
+      // ============================================
+      // EMPLOYEE DETAILS SECTIONS
+      // ============================================
+      
+      employeeGroups.forEach((group, groupIndex) => {
+        // Check if we need a new page
+        if (yPos > pageHeight - 80) {
+          doc.addPage();
+          yPos = margin;
+        }
+
+        // Employee Header
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text(`${groupIndex + 1}. ${group.name.toUpperCase()} (${group.employeeId}) - ${group.department}`, margin, yPos);
+
+        yPos += 8;
+
+        // Employee Summary
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        const empTotalRequests = group.records.length;
+        const empTotalHours = group.records.reduce((sum, r) => sum + (r.hours || 0), 0);
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('Total Requests:', margin, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(empTotalRequests.toString(), margin + 40, yPos);
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('Total Hours:', margin + 80, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(empTotalHours.toFixed(2), margin + 120, yPos);
+
+        yPos += 10;
+
+        // Prepare table data for this employee
+        const tableData = group.records.map((record, index) => {
+          // Format date to dd/MM/yyyy
+          let formattedDate = 'N/A';
+          if (record.date) {
+            const dateParts = record.date.split('-');
+            if (dateParts.length === 3) {
+              formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+            } else {
+              formattedDate = record.date;
+            }
+          }
+
+          // Generate Ref Code (format: HHMMSS_index, e.g., "200000_1")
+          // Based on the start time
+          let refCode = `${index + 1}`;
+          if (record.fromTime) {
+            // Convert time to format: HHMMSS (e.g., "20:00:00" -> "200000")
+            const timeStr = record.fromTime.replace(/:/g, '').padEnd(6, '0');
+            refCode = `${timeStr}_${index + 1}`;
+          } else if (record.id) {
+            // Fallback: use first 6 chars of ID + index
+            refCode = record.id.substring(0, 6) + '_' + (index + 1);
+          }
+
+          return [
+            formattedDate, // Date
+            refCode, // Ref Code
+            record.fromTime || 'N/A', // Start Time
+            record.toTime || 'N/A', // End Time
+            (record.hours || 0).toFixed(2), // Hours
+            record.reason || 'N/A' // Reason
+          ];
+        });
+
+        // Add table for this employee with standard borders and spacing
+        autoTable(doc, {
+          head: [['Date', 'Ref Code', 'Start Time', 'End Time', 'Hours', 'Reason']],
+          body: tableData,
+          startY: yPos,
+          margin: { left: margin, right: margin, top: 5, bottom: 5 },
+          styles: {
+            fontSize: 9,
+            cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+            textColor: [0, 0, 0],
+            font: 'helvetica',
+            fontStyle: 'normal',
+            lineColor: [0, 0, 0], // Black borders for all cells
+            lineWidth: 0.1, // Standard border width
+            fillColor: [255, 255, 255], // White background
+            halign: 'left',
+            valign: 'middle'
+          },
+          headStyles: {
+            fillColor: [41, 128, 185], // Blue header background
+            textColor: [255, 255, 255], // White text
+            fontStyle: 'bold',
+            fontSize: 10,
+            halign: 'center',
+            valign: 'middle',
+            cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
+            lineColor: [0, 0, 0],
+            lineWidth: 0.2 // Thicker borders for header
+          },
+          columnStyles: {
+            0: { halign: 'center', cellWidth: 25, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }, // Date
+            1: { halign: 'center', cellWidth: 25, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }, // Ref Code
+            2: { halign: 'center', cellWidth: 25, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }, // Start Time
+            3: { halign: 'center', cellWidth: 25, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }, // End Time
+            4: { halign: 'center', cellWidth: 20, cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }, // Hours
+            5: { halign: 'left', cellWidth: 'auto', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } } // Reason
+          },
+          alternateRowStyles: {
+            fillColor: [250, 250, 250], // Very light gray for alternate rows
+            lineColor: [0, 0, 0],
+            lineWidth: 0.1
+          },
+          bodyStyles: {
+            lineColor: [0, 0, 0],
+            lineWidth: 0.1
+          },
+          didParseCell: (data: any) => {
+            if (data.column.index === 5 && data.cell.text) {
+              const text = Array.isArray(data.cell.text) ? data.cell.text[0] : data.cell.text;
+              if (typeof text === 'string' && text.length > 30) {
+                data.cell.text = (doc as any).splitTextToSize(text, 40);
+              }
+            }
+          }
+        });
+
+        // Get final Y position after table
+        const finalY = (doc as any).lastAutoTable?.finalY || yPos + 50;
+        yPos = finalY + 15; // Add spacing before next employee section
+      });
+
+      // ============================================
+      // FOOTER
+      // ============================================
+      
+      const now = new Date();
+      let generatedDate = 'N/A';
+      try {
+        generatedDate = formatDate(now);
+      } catch (error) {
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        generatedDate = `${day}/${month}/${year}`;
+      }
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.setFont('helvetica', 'italic');
+      doc.text(`Generated on: ${generatedDate}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
+
+      // Save PDF
+      const fileName = `Overtime_Report_All_Employees_${reportPeriod.replace(/\s+/g, '-')}.pdf`;
+      doc.save(fileName);
+
+    } catch (error: any) {
+      console.error('Error generating comprehensive PDF:', error);
+      throw new Error(`Failed to generate PDF: ${error?.message || 'Unknown error'}`);
+    }
+  };
+
+  /**
+   * Export all submitted overtime records to PDF
+   * Creates a comprehensive report with overall summary and employee details
+   */
+  const handleExportAllRecords = async () => {
+    try {
+      if (submittedOvertimes.length === 0) {
+        alert('No records to export');
+        return;
+      }
+
+      setLoading(true);
+
+      // Determine report period from records
+      let reportPeriod: string | undefined;
+      if (submittedOvertimes.length > 0 && submittedOvertimes[0].date) {
+        const dateParts = submittedOvertimes[0].date.split('-');
+        if (dateParts.length === 3) {
+          const date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+          reportPeriod = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        }
+      }
+
+      // Export comprehensive report
+      await exportAllEmployeesOvertimeReport(submittedOvertimes, reportPeriod);
+
+      setLoading(false);
+      alert('Overtime report exported successfully!');
+    } catch (error: any) {
+      console.error('Error exporting overtime records:', error);
+      const errorMessage = error?.message || 'Unknown error occurred';
+      alert(`Error exporting records: ${errorMessage}. Please check the console for more details.`);
       setLoading(false);
     }
   };
@@ -919,33 +1452,53 @@ const Overtime = () => {
       ]);
 
       // Add table
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: yPos,
         head: [['Date', 'From Time', 'To Time', 'Hours', 'Reason', 'Status']],
         body: tableData,
-        theme: 'striped',
+        margin: { left: margin, right: margin, top: 5, bottom: 5 },
+        styles: {
+          fontSize: 9,
+          cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+          textColor: [0, 0, 0],
+          font: 'helvetica',
+          fontStyle: 'normal',
+          lineColor: [0, 0, 0], // Black borders
+          lineWidth: 0.1, // Standard border width
+          fillColor: [255, 255, 255], // White background
+          halign: 'left',
+          valign: 'middle'
+        },
         headStyles: {
-          fillColor: [0, 102, 153], // Teal header
-          textColor: 255,
+          fillColor: [41, 128, 185], // Blue header background
+          textColor: [255, 255, 255], // White text
           fontStyle: 'bold',
-          fontSize: 10
+          fontSize: 10,
+          halign: 'center',
+          valign: 'middle',
+          cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
+          lineColor: [0, 0, 0],
+          lineWidth: 0.2 // Thicker borders for header
         },
         bodyStyles: {
           fontSize: 9,
-          textColor: [0, 0, 0]
+          textColor: [0, 0, 0],
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1
         },
         alternateRowStyles: {
-          fillColor: [245, 250, 255] // Light teal background
+          fillColor: [250, 250, 250], // Very light gray for alternate rows
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1
         },
         columnStyles: {
-          0: { cellWidth: 30 },
-          1: { cellWidth: 25 },
-          2: { cellWidth: 25 },
-          3: { cellWidth: 20, halign: 'center' },
-          4: { cellWidth: 50 },
-          5: { cellWidth: 25, halign: 'center' }
-        },
-        margin: { left: 20, right: 20 }
+          0: { cellWidth: 30, halign: 'center', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } },
+          1: { cellWidth: 25, halign: 'center', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } },
+          2: { cellWidth: 25, halign: 'center', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } },
+          3: { cellWidth: 20, halign: 'center', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } },
+          4: { cellWidth: 50, halign: 'left', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } },
+          5: { cellWidth: 25, halign: 'center', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }
+        }
       });
 
       // Get final Y position after table
@@ -1109,33 +1662,53 @@ const Overtime = () => {
       ]);
 
       // Add table
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: yPos,
         head: [['Date', 'From Time', 'To Time', 'Hours', 'Reason', 'Status']],
         body: tableData,
-        theme: 'striped',
+        margin: { left: margin, right: margin, top: 5, bottom: 5 },
+        styles: {
+          fontSize: 9,
+          cellPadding: { top: 5, bottom: 5, left: 4, right: 4 },
+          textColor: [0, 0, 0],
+          font: 'helvetica',
+          fontStyle: 'normal',
+          lineColor: [0, 0, 0], // Black borders
+          lineWidth: 0.1, // Standard border width
+          fillColor: [255, 255, 255], // White background
+          halign: 'left',
+          valign: 'middle'
+        },
         headStyles: {
-          fillColor: [0, 102, 153], // Teal header
-          textColor: 255,
+          fillColor: [41, 128, 185], // Blue header background
+          textColor: [255, 255, 255], // White text
           fontStyle: 'bold',
-          fontSize: 10
+          fontSize: 10,
+          halign: 'center',
+          valign: 'middle',
+          cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
+          lineColor: [0, 0, 0],
+          lineWidth: 0.2 // Thicker borders for header
         },
         bodyStyles: {
           fontSize: 9,
-          textColor: [0, 0, 0]
+          textColor: [0, 0, 0],
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1
         },
         alternateRowStyles: {
-          fillColor: [245, 250, 255] // Light teal background
+          fillColor: [250, 250, 250], // Very light gray for alternate rows
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1
         },
         columnStyles: {
-          0: { cellWidth: 30 },
-          1: { cellWidth: 25 },
-          2: { cellWidth: 25 },
-          3: { cellWidth: 20, halign: 'center' },
-          4: { cellWidth: 50 },
-          5: { cellWidth: 25, halign: 'center' }
-        },
-        margin: { left: 20, right: 20 }
+          0: { cellWidth: 30, halign: 'center', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } },
+          1: { cellWidth: 25, halign: 'center', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } },
+          2: { cellWidth: 25, halign: 'center', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } },
+          3: { cellWidth: 20, halign: 'center', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } },
+          4: { cellWidth: 50, halign: 'left', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } },
+          5: { cellWidth: 25, halign: 'center', cellPadding: { top: 5, bottom: 5, left: 4, right: 4 } }
+        }
       });
 
       // Get final Y position after table
@@ -1388,16 +1961,21 @@ const Overtime = () => {
           <h3 style={{ margin: 0, color: '#1f2937', fontSize: '1.25rem', fontWeight: '600' }}>
             Submitted Overtime Records
           </h3>
+          {submittedOvertimes.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleExportAllRecords}
+              disabled={loading}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Icon name="download" />
+              {loading ? 'Exporting...' : 'Export / Download PDF'}
+            </button>
+          )}
         </div>
         {loadingSubmitted ? (
-          <div className="loading-container">
-            <div className="spinner"></div>
-            <p className="loading-text">Loading records...</p>
-          </div>
-        ) : submittedOvertimes.length === 0 ? (
-          <div className="no-data" style={{ padding: '40px', textAlign: 'center' }}>
-            <p>No submitted overtime records found</p>
-          </div>
+          <Loading message="Loading records..." />
         ) : (
           <div className="staff-table-container">
             <table className="staff-table">
@@ -1415,7 +1993,13 @@ const Overtime = () => {
                 </tr>
               </thead>
               <tbody>
-                {(() => {
+                {submittedOvertimes.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                      No submitted overtime records found
+                    </td>
+                  </tr>
+                ) : (() => {
                   // Group records by user (employeeId or name)
                   const groupedByUser = submittedOvertimes.reduce((acc, record) => {
                     const key = record.employeeId || record.name || 'unknown';
@@ -1576,13 +2160,33 @@ const Overtime = () => {
                   <div className="spinner"></div>
                   <p className="loading-text">Loading records...</p>
                 </div>
-              ) : pastOvertimes.length === 0 ? (
-                <div className="no-data" style={{ padding: '40px', textAlign: 'center' }}>
-                  <p>No past overtime records found</p>
-                </div>
               ) : (
                 <div>
-                  {(() => {
+                  {pastOvertimes.length === 0 ? (
+                    <div className="staff-table-container">
+                      <table className="staff-table">
+                        <thead>
+                          <tr>
+                            <th>User Name</th>
+                            <th>Date</th>
+                            <th>From Time</th>
+                            <th>To Time</th>
+                            <th>Hours</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Submitted At</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td colSpan={8} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                              No past overtime records found
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (() => {
                     // Group records by resetMonth
                     const groupedByMonth = pastOvertimes.reduce((acc, record) => {
                       const month = record.resetMonth || 'Unknown Month';

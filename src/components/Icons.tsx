@@ -200,6 +200,20 @@ const Icon = ({ name, className = '' }: IconProps) => {
         <path d="M3.33333 10H16.6667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
         <path d="M3.33333 15H16.6667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
       </svg>
+    ),
+    image: (
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="4" width="14" height="12" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+        <path d="M3 12L7 8L11 12L17 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="13" cy="7" r="1.5" fill="currentColor"/>
+      </svg>
+    ),
+    info: (
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+        <path d="M10 6.66667V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        <circle cx="10" cy="13.3333" r="0.833333" fill="currentColor"/>
+      </svg>
     )
   };
 

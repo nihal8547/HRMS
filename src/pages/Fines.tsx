@@ -6,6 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { fetchUserRole, isAdmin } from '../utils/userRole';
 import { fetchAllEmployees } from '../utils/fetchEmployees';
 import Icon from '../components/Icons';
+import Loading from '../components/Loading';
 import './Staffs/StaffManagement.css';
 import './Fines.css';
 
@@ -14,6 +15,7 @@ interface Fine {
   employeeId: string;
   employeeName: string;
   reason: string;
+  amount: number;
   imageUrl?: string;
   status: 'pending' | 'accepted' | 'declined';
   declineReason?: string;
@@ -34,6 +36,7 @@ const Fines = () => {
     employeeId: '',
     employeeName: '',
     reason: '',
+    amount: '',
     imageFile: null as File | null,
     imagePreview: null as string | null
   });
@@ -183,8 +186,19 @@ const Fines = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.employeeId || !formData.reason.trim()) {
+    if (!formData.employeeId || !formData.reason.trim() || !formData.amount) {
       alert('Please fill in all required fields');
+      return;
+    }
+
+    const amount = parseFloat(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid fine amount');
+      return;
+    }
+
+    if (!formData.employeeName) {
+      alert('Please select a valid employee');
       return;
     }
 
@@ -194,28 +208,49 @@ const Fines = () => {
 
       // Upload image if provided
       if (formData.imageFile) {
-        const imageRef = ref(storage, `fines/${Date.now()}_${formData.imageFile.name}`);
-        await uploadBytes(imageRef, formData.imageFile);
-        imageUrl = await getDownloadURL(imageRef);
+        try {
+          const imageRef = ref(storage, `fines/${Date.now()}_${formData.imageFile.name}`);
+          await uploadBytes(imageRef, formData.imageFile);
+          imageUrl = await getDownloadURL(imageRef);
+        } catch (imageError: any) {
+          console.error('Error uploading image:', imageError);
+          alert(`Error uploading image: ${imageError.message || 'Please try again'}`);
+          setUploading(false);
+          return;
+        }
       }
 
       // Get current user name
-      const allEmployees = await fetchAllEmployees();
-      const currentUserEmp = allEmployees.find(emp => 
-        emp.id === currentUserId || emp.authUserId === currentUserId
-      );
-      const createdByName = currentUserEmp?.name || currentUserEmp?.fullName || 'Admin';
+      let createdByName = 'Admin';
+      try {
+        const allEmployees = await fetchAllEmployees();
+        const currentUserEmp = allEmployees.find(emp => 
+          emp.id === currentUserId || emp.authUserId === currentUserId
+        );
+        createdByName = currentUserEmp?.name || currentUserEmp?.fullName || 'Admin';
+      } catch (empError) {
+        console.error('Error fetching employee data:', empError);
+        // Continue with default 'Admin' name
+      }
 
-      const fineData: Omit<Fine, 'id'> = {
+      const fineData: any = {
         employeeId: formData.employeeId,
         employeeName: formData.employeeName,
         reason: formData.reason.trim(),
-        imageUrl: imageUrl || undefined,
+        amount: amount,
         status: 'pending',
         createdAt: new Date(),
         createdBy: currentUserId,
-        createdByName
+        createdByName: createdByName
       };
+
+      // Only add imageUrl if it exists
+      if (imageUrl) {
+        fineData.imageUrl = imageUrl;
+      }
+
+      // Log the data being sent (for debugging)
+      console.log('Creating fine with data:', fineData);
 
       await addDoc(collection(db, 'fines'), fineData);
 
@@ -223,9 +258,10 @@ const Fines = () => {
       setShowForm(false);
       resetForm();
       await fetchFines(currentUserId, userRole);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating fine:', error);
-      alert('Error creating fine. Please try again.');
+      const errorMessage = error?.message || 'Unknown error occurred';
+      alert(`Error creating fine: ${errorMessage}. Please check the console for more details.`);
     } finally {
       setUploading(false);
     }
@@ -271,11 +307,30 @@ const Fines = () => {
     }
   };
 
+  const handleStatusUpdate = async (fineId: string, newStatus: string) => {
+    if (!isAdminUser) {
+      alert('You do not have permission to update fine status.');
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, 'fines', fineId), {
+        status: newStatus,
+        updatedAt: new Date()
+      });
+      await fetchFines(currentUserId, userRole);
+    } catch (error) {
+      console.error('Error updating fine status:', error);
+      alert('Error updating fine status. Please try again.');
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       employeeId: '',
       employeeName: '',
       reason: '',
+      amount: '',
       imageFile: null,
       imagePreview: null
     });
@@ -285,13 +340,10 @@ const Fines = () => {
     if (!timestamp) return 'N/A';
     try {
       const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
     } catch {
       return 'N/A';
     }
@@ -301,10 +353,7 @@ const Fines = () => {
     return (
       <div className="full-page">
         <div className="staff-management">
-          <div className="loading-container">
-            <div className="spinner"></div>
-            <p className="loading-text">Loading fines...</p>
-          </div>
+          <Loading fullPage message="Loading fines..." />
         </div>
       </div>
     );
@@ -368,6 +417,18 @@ const Fines = () => {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div className="form-group">
+                  <label>Fine Amount (QAR) *</label>
+                  <input
+                    type="number"
+                    value={formData.amount}
+                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                    required
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter fine amount in QAR"
+                  />
                 </div>
                 <div className="form-group">
                   <label>Reason *</label>
@@ -451,65 +512,98 @@ const Fines = () => {
               <p>No fines found</p>
             </div>
           ) : (
-            <div className="fines-grid">
-              {filteredFines.map((fine) => (
-                <div key={fine.id} className="fine-card">
-                  <div className="fine-card-header">
-                    <div>
-                      <h3>{fine.employeeName}</h3>
-                      <p className="employee-id">{fine.employeeId}</p>
-                    </div>
-                    <span className={`status-badge ${fine.status}`}>
-                      {fine.status}
-                    </span>
-                  </div>
-                  <div className="fine-card-body">
-                    <div className="fine-reason">
-                      <strong>Reason:</strong>
-                      <p>{fine.reason}</p>
-                    </div>
-                    {fine.imageUrl && (
-                      <div className="fine-image">
-                        <img 
-                          src={fine.imageUrl} 
-                          alt="Fine evidence" 
-                          onClick={() => window.open(fine.imageUrl, '_blank')}
-                        />
-                      </div>
-                    )}
-                    {fine.declineReason && (
-                      <div className="decline-reason">
-                        <strong>Decline Reason:</strong>
-                        <p>{fine.declineReason}</p>
-                      </div>
-                    )}
-                    <div className="fine-meta">
-                      <p><strong>Created:</strong> {formatDate(fine.createdAt)}</p>
-                      {fine.createdByName && (
-                        <p><strong>By:</strong> {fine.createdByName}</p>
-                      )}
-                    </div>
-                  </div>
-                  {!isAdminUser && fine.status === 'pending' && (
-                    <div className="fine-card-actions">
-                      <button
-                        className="btn-accept"
-                        onClick={() => handleAccept(fine)}
-                      >
-                        <Icon name="check" />
-                        Accept
-                      </button>
-                      <button
-                        className="btn-decline"
-                        onClick={() => setDecliningFine(fine)}
-                      >
-                        <Icon name="x" />
-                        Decline
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="staff-table-container">
+              <table className="staff-table">
+                <thead>
+                  <tr>
+                    <th>Employee ID</th>
+                    <th>Employee Name</th>
+                    <th>Amount (QAR)</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Created Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredFines.map((fine) => (
+                    <tr key={fine.id}>
+                      <td>{fine.employeeId || 'N/A'}</td>
+                      <td>{fine.employeeName || 'N/A'}</td>
+                      <td className="amount-cell">
+                        {fine.amount ? `${fine.amount.toFixed(2)} QAR` : 'N/A'}
+                      </td>
+                      <td title={fine.reason || ''}>
+                        {(fine.reason || '').length > 50 
+                          ? (fine.reason || '').substring(0, 50) + '...' 
+                          : fine.reason || 'N/A'}
+                      </td>
+                      <td>
+                        {isAdminUser ? (
+                          <select
+                            value={fine.status || 'pending'}
+                            onChange={(e) => handleStatusUpdate(fine.id!, e.target.value)}
+                            className={`status-select ${fine.status || 'pending'}`}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="accepted">Accepted</option>
+                            <option value="declined">Declined</option>
+                          </select>
+                        ) : (
+                          <span className={`status-badge ${fine.status}`}>
+                            {fine.status}
+                          </span>
+                        )}
+                      </td>
+                      <td>{formatDate(fine.createdAt)}</td>
+                      <td>
+                        <div className="action-buttons">
+                          {fine.imageUrl && (
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              onClick={() => window.open(fine.imageUrl, '_blank')}
+                              title="View Image"
+                            >
+                              <Icon name="image" />
+                              View Image
+                            </button>
+                          )}
+                          {!isAdminUser && fine.status === 'pending' && (
+                            <>
+                              <button
+                                className="btn btn-sm btn-accept"
+                                onClick={() => handleAccept(fine)}
+                                title="Accept Fine"
+                              >
+                                <Icon name="check" />
+                                Accept
+                              </button>
+                              <button
+                                className="btn btn-sm btn-decline"
+                                onClick={() => setDecliningFine(fine)}
+                                title="Decline Fine"
+                              >
+                                <Icon name="x" />
+                                Decline
+                              </button>
+                            </>
+                          )}
+                          {fine.declineReason && (
+                            <button
+                              className="btn btn-sm btn-info"
+                              onClick={() => alert(`Decline Reason: ${fine.declineReason}`)}
+                              title="View Decline Reason"
+                            >
+                              <Icon name="info" />
+                              Decline Reason
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

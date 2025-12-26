@@ -115,6 +115,99 @@
   gap: 20px;
 }
 
+.staff-table-container {
+  overflow-x: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.staff-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.staff-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.staff-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s;
+}
+
+.staff-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.staff-table td {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.amount-cell {
+  font-weight: 600;
+  color: #059669;
+  font-family: 'Courier New', monospace;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.btn-sm.btn-accept {
+  background: #10b981;
+  color: white;
+}
+
+.btn-sm.btn-accept:hover {
+  background: #059669;
+}
+
+.btn-sm.btn-decline {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-sm.btn-decline:hover {
+  background: #dc2626;
+}
+
+.btn-sm.btn-info {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-sm.btn-info:hover {
+  background: #2563eb;
+}
+
 .fine-card {
   background: white;
   border-radius: 12px;
@@ -283,6 +376,43 @@
 }
 
 .status-badge.declined {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-select {
+  min-width: 120px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.status-select:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.status-select.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-select.accepted {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-select.declined {
   background: #fee2e2;
   color: #991b1b;
 }

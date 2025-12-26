@@ -212,3 +212,8 @@ var(--shadow-md)
 
 All table headers now use a **blue gradient** (`#2563eb` to `#1e40af`) with white text for a professional, consistent look across the entire application.
 
+
+
+
+
+
